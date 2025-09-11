@@ -1,57 +1,68 @@
 import express from "express";
 import cors from "cors";
+import db from "./db/db";
+import { Task } from './types/task';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-interface Task {
-  id: number;
-  title: string;
-  totalSeconds: number;
-  isRunning: boolean;
-  lastStart?: number;
-}
-
-let tasks: Task[] = [
-  { id: 1, title: "Write report", totalSeconds: 0, isRunning: false },
-  { id: 2, title: "Read book", totalSeconds: 0, isRunning: false },
-  { id: 3, title: "Learn React", totalSeconds: 0, isRunning: false }
-];
-
 function updateRunningTask() {
   const now = Date.now();
-  tasks.forEach(t => {
-    if (t.isRunning && t.lastStart) {
+  const tasks = db.prepare("SELECT * FROM tasks WHERE isRunning = 1").all();
+  tasks.forEach((t: any) => {
+    if (t.lastStart) {
       const elapsed = Math.floor((now - t.lastStart) / 1000);
-      t.totalSeconds += elapsed;
-      t.lastStart = now;
+      db.prepare(
+        "UPDATE tasks SET totalSeconds = totalSeconds + ?, lastStart = ? WHERE id = ?"
+      ).run(elapsed, now, t.id);
     }
   });
 }
 
 app.get("/tasks", (req, res) => {
   updateRunningTask();
+  const tasks = db.prepare("SELECT * FROM tasks").all();
   res.json(tasks);
+});
+
+app.post("/tasks", (req, res) => {
+  const { title } = req.body;
+  const stmt = db.prepare(
+    "INSERT INTO tasks (title, totalSeconds, isRunning) VALUES (?, 0, 0)"
+  );
+  const result = stmt.run(title);
+  res.json(db.prepare("SELECT * FROM tasks WHERE id = ?").get(result.lastInsertRowid));
 });
 
 app.post("/tasks/:id/toggle", (req, res) => {
   const id = parseInt(req.params.id, 10);
   updateRunningTask();
-  tasks = tasks.map(t => {
-    if (t.id === id) {
-      if (t.isRunning) {
-        t.isRunning = false;
-      } else {
-        t.isRunning = true;
-        t.lastStart = Date.now();
-      }
-    } else {
-      t.isRunning = false;
-    }
-    return t;
-  });
-  res.json(tasks);
+
+  const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(id) as Task;
+  if (!task) return res.status(404).send("Task not found");
+
+  if (task.isRunning) {
+    db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(id);
+  } else {
+    db.prepare("UPDATE tasks SET isRunning = 0").run(); // pause others
+    db.prepare("UPDATE tasks SET isRunning = 1, lastStart = ? WHERE id = ?").run(Date.now(), id);
+  }
+
+  res.json(db.prepare("SELECT * FROM tasks").all());
+});
+
+app.put("/tasks/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const { title } = req.body;
+  db.prepare("UPDATE tasks SET title = ? WHERE id = ?").run(title, id);
+  res.json(db.prepare("SELECT * FROM tasks WHERE id = ?").get(id));
+});
+
+app.delete("/tasks/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  db.prepare("DELETE FROM tasks WHERE id = ?").run(id);
+  res.json({ success: true });
 });
 
 const PORT = 4000;
