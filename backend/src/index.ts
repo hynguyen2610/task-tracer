@@ -53,10 +53,18 @@ app.post("/tasks/:id/toggle", (req, res) => {
 });
 
 app.put("/tasks/:id", (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const { title } = req.body;
-  db.prepare("UPDATE tasks SET title = ? WHERE id = ?").run(title, id);
-  res.json(db.prepare("SELECT * FROM tasks WHERE id = ?").get(id));
+  const { title, totalTime } = req.body; // totalTime in "HH:mm"
+  let totalSeconds: number | undefined;
+
+  if (totalTime) {
+    const [h, m] = totalTime.split(":").map(Number);
+    totalSeconds = h * 3600 + m * 60;
+  }
+
+  db.prepare(
+  `UPDATE tasks SET title = ?, totalSeconds = COALESCE(?, totalSeconds) WHERE id = ?`
+).run([title, totalSeconds, req.params.id]);
+  res.json({ success: true });
 });
 
 app.delete("/tasks/:id", (req, res) => {
