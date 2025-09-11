@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import { Play, Pause, Trash2, Edit2, Check } from "lucide-react"
 import type { Task } from "./types"
@@ -18,6 +18,7 @@ export default function App() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editTime, setEditTime] = useState("")
+  const newTaskInputRef = useRef<HTMLInputElement>(null)
 
   const fetchTasks = async () => {
     const res = await axios.get<Task[]>(`${API_URL}/tasks`)
@@ -29,6 +30,7 @@ export default function App() {
     await axios.post<Task>(`${API_URL}/tasks`, { title: newTitle })
     setNewTitle("")
     fetchTasks()
+    setTimeout(() => newTaskInputRef.current?.focus(), 0)
   }
 
   const toggleTask = async (id: number) => {
@@ -66,16 +68,33 @@ export default function App() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().includes("MAC")
+      if ((isMac && e.metaKey && e.key === "a") || (!isMac && e.ctrlKey && e.key === "a")) {
+        e.preventDefault()
+        newTaskInputRef.current?.focus()
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-8">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Task Tracker</h1>
+
         <div className="flex mb-6 space-x-2">
           <input
+            ref={newTaskInputRef}
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="New task title..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") addTask()
+            }}
             className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <button
@@ -85,17 +104,13 @@ export default function App() {
             ➕ Add
           </button>
         </div>
+
         <div className="space-y-4">
-          {tasks.map((task, index) => (
+          {tasks.map((task) => (
             <div
               key={task.id}
               className="flex items-center justify-between p-4 bg-slate-50 rounded-xl shadow-sm"
             >
-              <div className="flex-shrink-0 mr-4">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
-                  {index + 1}
-                </div>
-              </div>
               <div className="flex-1">
                 {editingId === task.id ? (
                   <div className="space-y-2">
@@ -103,22 +118,31 @@ export default function App() {
                       type="text"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveEdit(task.id)
+                      }}
                       className="border rounded-lg px-2 py-1 w-full"
                     />
                     <input
                       type="time"
                       value={editTime}
                       onChange={(e) => setEditTime(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveEdit(task.id)
+                      }}
                       className="border rounded-lg px-2 py-1"
                     />
                   </div>
                 ) : (
                   <>
                     <p className="font-medium text-gray-800">{task.title}</p>
-                    <p className="text-gray-500 text-sm">{formatTime(task.totalSeconds)}</p>
+                    <p className="text-gray-500 text-sm">
+                      {formatTime(task.totalSeconds)}
+                    </p>
                   </>
                 )}
               </div>
+
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => toggleTask(task.id)}
@@ -130,6 +154,7 @@ export default function App() {
                 >
                   {task.isRunning ? <Pause /> : <Play />}
                 </button>
+
                 {editingId === task.id ? (
                   <button
                     onClick={() => saveEdit(task.id)}
@@ -145,6 +170,7 @@ export default function App() {
                     <Edit2 />
                   </button>
                 )}
+
                 <button
                   onClick={() => deleteTask(task.id)}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-500 text-white hover:bg-gray-600"
