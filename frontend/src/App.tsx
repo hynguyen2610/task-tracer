@@ -82,11 +82,19 @@ export default function App() {
 
         {/* Task List */}
         <div className="space-y-4">
-          {tasks.map((task) => (
+          {tasks.map((task, index) => (
             <div
               key={task.id}
               className="flex items-center justify-between p-4 bg-slate-50 rounded-xl shadow-sm"
             >
+              {/* Circle number */}
+              <div className="flex-shrink-0 mr-4">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
+                  {index + 1}
+                </div>
+              </div>
+
+              {/* Task content */}
               <div className="flex-1">
                 {editingId === task.id ? (
                   <input
@@ -105,7 +113,8 @@ export default function App() {
                 )}
               </div>
 
-              <div className="flex items-center space-x-2">
+              {/* Action buttons */}
+              <div className="flex items-center space-x-2 ml-4">
                 <button
                   onClick={() => toggleTask(task.id)}
                   className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition ${
@@ -142,8 +151,13 @@ export default function App() {
               </div>
             </div>
           ))}
+
+          {tasks.length === 0 && (
+            <div className="text-center text-gray-500 py-6">No tasks</div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
