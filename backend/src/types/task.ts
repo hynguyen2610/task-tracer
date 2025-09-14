@@ -1,7 +1,9 @@
 export interface Task {
-  id: number;
-  title: string;
-  totalSeconds: number;
-  isRunning: boolean;
-  lastStart?: number;
+  id: number
+  title: string
+  totalSeconds: number
+  isRunning: boolean
+  lastStart: number | null
+  position: number
+  priority: "Highest" | "High" | "Normal" | "Low"
 }

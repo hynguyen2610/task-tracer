@@ -17,9 +17,11 @@ function formatTime(totalSeconds: number): string {
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTitle, setNewTitle] = useState("")
+  const [newPriority, setNewPriority] = useState<Task["priority"]>("Normal")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editTime, setEditTime] = useState("")
+  const [editPriority, setEditPriority] = useState<Task["priority"]>("Normal")
   const [globalRunning, setGlobalRunning] = useState(true)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const newTaskInputRef = useRef<HTMLInputElement>(null)
@@ -31,8 +33,9 @@ export default function App() {
 
   const addTask = async () => {
     if (!newTitle.trim()) return
-    await axios.post<Task>(`${API_URL}/tasks`, { title: newTitle })
+    await axios.post<Task>(`${API_URL}/tasks`, { title: newTitle, priority: newPriority })
     setNewTitle("")
+    setNewPriority("Normal")
     fetchTasks()
     setTimeout(() => newTaskInputRef.current?.focus(), 0)
   }
@@ -53,19 +56,21 @@ export default function App() {
     const h = String(Math.floor(task.totalSeconds / 3600)).padStart(2, "0")
     const m = String(Math.floor((task.totalSeconds % 3600) / 60)).padStart(2, "0")
     setEditTime(`${h}:${m}`)
+    setEditPriority(task.priority)
   }
 
   const saveEdit = async (id: number) => {
     const [h, m] = editTime.split(":").map(Number)
     const totalSeconds = h * 3600 + m * 60
-
     await axios.put(`${API_URL}/tasks/${id}`, {
       title: editTitle,
       totalSeconds,
+      priority: editPriority,
     })
     setEditingId(null)
     setEditTitle("")
     setEditTime("")
+    setEditPriority("Normal")
     fetchTasks()
   }
 
@@ -87,7 +92,6 @@ export default function App() {
     const [moved] = reordered.splice(result.source.index, 1)
     reordered.splice(result.destination.index, 0, moved)
     setTasks(reordered)
-    // Optionally persist order in backend
     await axios.post(`${API_URL}/tasks/reorder`, {
       ids: reordered.map((t) => t.id),
     })
@@ -99,18 +103,6 @@ export default function App() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [])
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const isMac = navigator.platform.toUpperCase().includes("MAC")
-      if ((isMac && e.metaKey && e.key === "a") || (!isMac && e.ctrlKey && e.key === "a")) {
-        e.preventDefault()
-        newTaskInputRef.current?.focus()
-      }
-    }
-    window.addEventListener("keydown", handler)
-    return () => window.removeEventListener("keydown", handler)
   }, [])
 
   const totalAllSeconds = tasks.reduce((sum, t) => sum + t.totalSeconds, 0)
@@ -141,6 +133,16 @@ export default function App() {
             }}
             className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+          <select
+            value={newPriority}
+            onChange={(e) => setNewPriority(e.target.value as Task["priority"])}
+            className="border rounded-lg px-2 py-2"
+          >
+            <option value="Highest">Highest</option>
+            <option value="High">High</option>
+            <option value="Normal">Normal</option>
+            <option value="Low">Low</option>
+          </select>
           <button
             onClick={addTask}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
@@ -197,13 +199,26 @@ export default function App() {
                                 onBlur={() => saveEdit(task.id)}
                                 className="border rounded-lg px-2 py-1"
                               />
+                              <label className="block text-sm font-medium text-gray-600">Priority</label>
+                              <select
+                                value={editPriority}
+                                onChange={(e) => setEditPriority(e.target.value as Task["priority"])}
+                                className="border rounded-lg px-2 py-1"
+                              >
+                                <option value="Highest">Highest</option>
+                                <option value="High">High</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Low">Low</option>
+                              </select>
                             </div>
                           ) : (
                             <div>
                               <p className="font-medium text-gray-800">{task.title}</p>
                               <p className="text-gray-500 text-sm">
-                                <span className="font-medium">Total Time:</span>{" "}
-                                {formatTime(task.totalSeconds)}
+                                <span className="font-medium">Total Time:</span> {formatTime(task.totalSeconds)}
+                              </p>
+                              <p className="text-gray-500 text-sm">
+                                <span className="font-medium">Priority:</span> {task.priority}
                               </p>
                             </div>
                           )}

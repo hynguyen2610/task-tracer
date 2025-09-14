@@ -3,4 +3,5 @@ export interface Task {
   title: string;
   totalSeconds: number;
   isRunning: boolean;
+  priority: "Highest" | "High" | "Normal" | "Low"
 }

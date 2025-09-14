@@ -14,7 +14,8 @@ db.prepare(`
     totalSeconds INTEGER,
     isRunning INTEGER,
     lastStart INTEGER,
-    position INTEGER
+    position INTEGER,
+    priority TEXT
   )
 `).run()
 
@@ -45,13 +46,13 @@ app.get("/tasks", (req, res) => {
 })
 
 app.post("/tasks", (req, res) => {
-  const { title } = req.body
+  const { title, priority } = req.body
   const maxRow = db.prepare("SELECT MAX(position) as max FROM tasks").get() as { max: number | null }
   const maxPos = maxRow.max ?? -1
   const stmt = db.prepare(
-    "INSERT INTO tasks (title, totalSeconds, isRunning, lastStart, position) VALUES (?, 0, 0, NULL, ?)"
+    "INSERT INTO tasks (title, totalSeconds, isRunning, lastStart, position, priority) VALUES (?, 0, 0, NULL, ?, ?)"
   )
-  const result = stmt.run(title, maxPos + 1)
+  const result = stmt.run(title, maxPos + 1, priority)
   res.json(db.prepare("SELECT * FROM tasks WHERE id = ?").get(result.lastInsertRowid))
 })
 
@@ -70,13 +71,14 @@ app.post("/tasks/:id/toggle", (req, res) => {
 })
 
 app.put("/tasks/:id", (req, res) => {
-  const { title, totalSeconds } = req.body
+  const { title, totalSeconds, priority } = req.body
   db.prepare(
     `UPDATE tasks 
      SET title = ?, 
-         totalSeconds = COALESCE(?, totalSeconds) 
+         totalSeconds = COALESCE(?, totalSeconds), 
+         priority = COALESCE(?, priority) 
      WHERE id = ?`
-  ).run(title, totalSeconds, req.params.id)
+  ).run(title, totalSeconds, priority, req.params.id)
   res.json({ success: true })
 })
 
@@ -102,3 +104,4 @@ const PORT = 4000
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`)
 })
+
