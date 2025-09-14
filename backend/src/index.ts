@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import db from "./db/db";
-import { Task } from './types/task';
+import { Task } from "./types/task";
 
 const app = express();
 app.use(cors());
@@ -32,7 +32,9 @@ app.post("/tasks", (req, res) => {
     "INSERT INTO tasks (title, totalSeconds, isRunning) VALUES (?, 0, 0)"
   );
   const result = stmt.run(title);
-  res.json(db.prepare("SELECT * FROM tasks WHERE id = ?").get(result.lastInsertRowid));
+  res.json(
+    db.prepare("SELECT * FROM tasks WHERE id = ?").get(result.lastInsertRowid)
+  );
 });
 
 app.post("/tasks/:id/toggle", (req, res) => {
@@ -46,24 +48,24 @@ app.post("/tasks/:id/toggle", (req, res) => {
     db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(id);
   } else {
     db.prepare("UPDATE tasks SET isRunning = 0").run(); // pause others
-    db.prepare("UPDATE tasks SET isRunning = 1, lastStart = ? WHERE id = ?").run(Date.now(), id);
+    db.prepare(
+      "UPDATE tasks SET isRunning = 1, lastStart = ? WHERE id = ?"
+    ).run(Date.now(), id);
   }
 
   res.json(db.prepare("SELECT * FROM tasks").all());
 });
 
 app.put("/tasks/:id", (req, res) => {
-  const { title, totalTime } = req.body; // totalTime in "HH:mm"
-  let totalSeconds: number | undefined;
-
-  if (totalTime) {
-    const [h, m] = totalTime.split(":").map(Number);
-    totalSeconds = h * 3600 + m * 60;
-  }
+  const { title, totalSeconds } = req.body; // frontend now sends totalSeconds directly
 
   db.prepare(
-  `UPDATE tasks SET title = ?, totalSeconds = COALESCE(?, totalSeconds) WHERE id = ?`
-).run([title, totalSeconds, req.params.id]);
+    `UPDATE tasks 
+     SET title = ?, 
+         totalSeconds = COALESCE(?, totalSeconds) 
+     WHERE id = ?`
+  ).run(title, totalSeconds, req.params.id);
+
   res.json({ success: true });
 });
 
