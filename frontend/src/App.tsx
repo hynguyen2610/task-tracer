@@ -19,7 +19,8 @@ export default function App() {
   const [editTitle, setEditTitle] = useState("")
   const [editTime, setEditTime] = useState("")
   const [globalRunning, setGlobalRunning] = useState(true)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const tickRef = useRef<NodeJS.Timeout | null>(null)
+  const syncRef = useRef<NodeJS.Timeout | null>(null)
   const newTaskInputRef = useRef<HTMLInputElement>(null)
 
   const fetchTasks = async () => {
@@ -69,21 +70,39 @@ export default function App() {
 
   const toggleGlobal = () => {
     if (globalRunning) {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      intervalRef.current = null
+      if (tickRef.current) clearInterval(tickRef.current)
+      if (syncRef.current) clearInterval(syncRef.current)
+      tickRef.current = null
+      syncRef.current = null
       setGlobalRunning(false)
     } else {
       fetchTasks()
-      intervalRef.current = setInterval(fetchTasks, 1000)
+      tickRef.current = setInterval(() => {
+        setTasks(prev =>
+          prev.map(t =>
+            t.isRunning ? { ...t, totalSeconds: t.totalSeconds + 1 } : t
+          )
+        )
+      }, 1000)
+      syncRef.current = setInterval(fetchTasks, 5000) // backend sync every 5s
       setGlobalRunning(true)
     }
   }
 
   useEffect(() => {
     fetchTasks()
-    intervalRef.current = setInterval(fetchTasks, 1000)
+    // start ticking + sync
+    tickRef.current = setInterval(() => {
+      setTasks(prev =>
+        prev.map(t =>
+          t.isRunning ? { ...t, totalSeconds: t.totalSeconds + 1 } : t
+        )
+      )
+    }, 1000)
+    syncRef.current = setInterval(fetchTasks, 5000)
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      if (tickRef.current) clearInterval(tickRef.current)
+      if (syncRef.current) clearInterval(syncRef.current)
     }
   }, [])
 
