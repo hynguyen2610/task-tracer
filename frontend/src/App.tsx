@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import { Play, Pause, Trash2, Edit2, Check } from "lucide-react"
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
+import type { DropResult } from "@hello-pangea/dnd"
 import type { Task } from "./types"
 
 const API_URL = "http://localhost:4000"
@@ -19,8 +21,7 @@ export default function App() {
   const [editTitle, setEditTitle] = useState("")
   const [editTime, setEditTime] = useState("")
   const [globalRunning, setGlobalRunning] = useState(true)
-  const tickRef = useRef<NodeJS.Timeout | null>(null)
-  const syncRef = useRef<NodeJS.Timeout | null>(null)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const newTaskInputRef = useRef<HTMLInputElement>(null)
 
   const fetchTasks = async () => {
@@ -70,39 +71,33 @@ export default function App() {
 
   const toggleGlobal = () => {
     if (globalRunning) {
-      if (tickRef.current) clearInterval(tickRef.current)
-      if (syncRef.current) clearInterval(syncRef.current)
-      tickRef.current = null
-      syncRef.current = null
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      intervalRef.current = null
       setGlobalRunning(false)
     } else {
       fetchTasks()
-      tickRef.current = setInterval(() => {
-        setTasks(prev =>
-          prev.map(t =>
-            t.isRunning ? { ...t, totalSeconds: t.totalSeconds + 1 } : t
-          )
-        )
-      }, 1000)
-      syncRef.current = setInterval(fetchTasks, 5000) // backend sync every 5s
+      intervalRef.current = setInterval(fetchTasks, 1000)
       setGlobalRunning(true)
     }
   }
 
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return
+    const reordered = Array.from(tasks)
+    const [moved] = reordered.splice(result.source.index, 1)
+    reordered.splice(result.destination.index, 0, moved)
+    setTasks(reordered)
+    // Optionally persist order in backend
+    await axios.post(`${API_URL}/tasks/reorder`, {
+      ids: reordered.map((t) => t.id),
+    })
+  }
+
   useEffect(() => {
     fetchTasks()
-    // start ticking + sync
-    tickRef.current = setInterval(() => {
-      setTasks(prev =>
-        prev.map(t =>
-          t.isRunning ? { ...t, totalSeconds: t.totalSeconds + 1 } : t
-        )
-      )
-    }, 1000)
-    syncRef.current = setInterval(fetchTasks, 5000)
+    intervalRef.current = setInterval(fetchTasks, 1000)
     return () => {
-      if (tickRef.current) clearInterval(tickRef.current)
-      if (syncRef.current) clearInterval(syncRef.current)
+      if (intervalRef.current) clearInterval(intervalRef.current)
     }
   }, [])
 
@@ -123,7 +118,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-8">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 relative">
-        {/* Global Toggle Button */}
         <button
           onClick={toggleGlobal}
           className={`absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full text-white transition ${
@@ -159,92 +153,106 @@ export default function App() {
           Total Time (All Tasks): {formatTime(totalAllSeconds)}
         </div>
 
-        <div className="space-y-4">
-          {tasks.map((task, index) => (
-            <div
-              key={task.id}
-              className="flex items-center justify-between p-4 bg-slate-50 rounded-xl shadow-sm"
-            >
-              <div className="flex items-center flex-1">
-                <div className="flex-shrink-0 mr-4">
-                  <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
-                    {index + 1}
-                  </div>
-                </div>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="task-list">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                {tasks.map((task, index) => (
+                  <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl shadow-sm"
+                      >
+                        <div className="flex items-center flex-1">
+                          <div className="flex-shrink-0 mr-4">
+                            <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
+                              {index + 1}
+                            </div>
+                          </div>
 
-                {editingId === task.id ? (
-                  <div className="space-y-2 flex-1">
-                    <label className="block text-sm font-medium text-gray-600">Title</label>
-                    <input
-                      type="text"
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEdit(task.id)
-                      }}
-                      onBlur={() => saveEdit(task.id)}
-                      className="border rounded-lg px-2 py-1 w-full"
-                    />
-                    <label className="block text-sm font-medium text-gray-600">Total Time (HH:mm)</label>
-                    <input
-                      type="time"
-                      value={editTime}
-                      onChange={(e) => setEditTime(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEdit(task.id)
-                      }}
-                      onBlur={() => saveEdit(task.id)}
-                      className="border rounded-lg px-2 py-1"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <p className="font-medium text-gray-800">{task.title}</p>
-                    <p className="text-gray-500 text-sm">
-                      <span className="font-medium">Total Time:</span> {formatTime(task.totalSeconds)}
-                    </p>
-                  </div>
-                )}
+                          {editingId === task.id ? (
+                            <div className="space-y-2 flex-1">
+                              <label className="block text-sm font-medium text-gray-600">Title</label>
+                              <input
+                                type="text"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") saveEdit(task.id)
+                                }}
+                                onBlur={() => saveEdit(task.id)}
+                                className="border rounded-lg px-2 py-1 w-full"
+                              />
+                              <label className="block text-sm font-medium text-gray-600">Total Time (HH:mm)</label>
+                              <input
+                                type="time"
+                                value={editTime}
+                                onChange={(e) => setEditTime(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") saveEdit(task.id)
+                                }}
+                                onBlur={() => saveEdit(task.id)}
+                                className="border rounded-lg px-2 py-1"
+                              />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-medium text-gray-800">{task.title}</p>
+                              <p className="text-gray-500 text-sm">
+                                <span className="font-medium">Total Time:</span>{" "}
+                                {formatTime(task.totalSeconds)}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => toggleTask(task.id)}
+                            className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition ${
+                              task.isRunning
+                                ? "bg-red-500 hover:bg-red-600"
+                                : "bg-green-500 hover:bg-green-600"
+                            }`}
+                          >
+                            {task.isRunning ? <Pause /> : <Play />}
+                          </button>
+
+                          {editingId === task.id ? (
+                            <button
+                              onClick={() => saveEdit(task.id)}
+                              className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                            >
+                              <Check />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => startEditing(task)}
+                              className="w-10 h-10 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600"
+                            >
+                              <Edit2 />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-500 text-white hover:bg-gray-600"
+                          >
+                            <Trash2 />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => toggleTask(task.id)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition ${
-                    task.isRunning
-                      ? "bg-red-500 hover:bg-red-600"
-                      : "bg-green-500 hover:bg-green-600"
-                  }`}
-                >
-                  {task.isRunning ? <Pause /> : <Play />}
-                </button>
-
-                {editingId === task.id ? (
-                  <button
-                    onClick={() => saveEdit(task.id)}
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
-                  >
-                    <Check />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => startEditing(task)}
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600"
-                  >
-                    <Edit2 />
-                  </button>
-                )}
-
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-500 text-white hover:bg-gray-600"
-                >
-                  <Trash2 />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
     </div>
   )
