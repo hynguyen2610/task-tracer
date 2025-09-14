@@ -7,6 +7,8 @@ import type { Task } from "./types"
 import * as XLSX from "xlsx"
 import { saveAs } from "file-saver"
 
+import "./App.css"
+
 const API_URL = "http://localhost:4000"
 
 function formatTime(totalSeconds: number): string {
@@ -212,7 +214,8 @@ export default function App() {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`flex items-center justify-between p-4 rounded-xl shadow-sm ${priorityColors[task.priority]}`}
+                        className={`flex items-center justify-between p-4 rounded-xl shadow-sm ${priorityColors[task.priority]} ${task.isRunning ? "glow border-blue-500" : ""}`
+                        }
                       >
 
                         <div className="flex items-center flex-1">
