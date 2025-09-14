@@ -107,14 +107,21 @@ export default function App() {
 
   const totalAllSeconds = tasks.reduce((sum, t) => sum + t.totalSeconds, 0)
 
+  const priorityColors: Record<Task["priority"], string> = {
+    Highest: "bg-red-100 border-l-4 border-red-500",
+    High: "bg-orange-100 border-l-4 border-orange-500",
+    Normal: "bg-green-100 border-l-4 border-green-500",
+    Low: "bg-gray-100 border-l-4 border-gray-400",
+  }
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-8">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 relative">
         <button
           onClick={toggleGlobal}
-          className={`absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full text-white transition ${
-            globalRunning ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
-          }`}
+          className={`absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full text-white transition ${globalRunning ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+            }`}
         >
           {globalRunning ? <Pause /> : <Play />}
         </button>
@@ -166,8 +173,9 @@ export default function App() {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl shadow-sm"
+                        className={`flex items-center justify-between p-4 rounded-xl shadow-sm ${priorityColors[task.priority]}`}
                       >
+
                         <div className="flex items-center flex-1">
                           <div className="flex-shrink-0 mr-4">
                             <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
@@ -227,11 +235,10 @@ export default function App() {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => toggleTask(task.id)}
-                            className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition ${
-                              task.isRunning
-                                ? "bg-red-500 hover:bg-red-600"
-                                : "bg-green-500 hover:bg-green-600"
-                            }`}
+                            className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition ${task.isRunning
+                              ? "bg-red-500 hover:bg-red-600"
+                              : "bg-green-500 hover:bg-green-600"
+                              }`}
                           >
                             {task.isRunning ? <Pause /> : <Play />}
                           </button>
@@ -272,3 +279,4 @@ export default function App() {
     </div>
   )
 }
+
