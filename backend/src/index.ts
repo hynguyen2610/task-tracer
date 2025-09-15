@@ -7,18 +7,6 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    totalSeconds INTEGER,
-    isRunning INTEGER,
-    lastStart INTEGER,
-    position INTEGER,
-    priority TEXT
-  )
-`).run()
-
 const tasksWithoutPosition = db.prepare("SELECT * FROM tasks WHERE position IS NULL").all()
 if (tasksWithoutPosition.length > 0) {
   tasksWithoutPosition.forEach((t: any, idx: number) => {

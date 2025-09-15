@@ -8,7 +8,9 @@ db.prepare(`
     title TEXT NOT NULL,
     totalSeconds INTEGER NOT NULL DEFAULT 0,
     isRunning INTEGER NOT NULL DEFAULT 0,
-    lastStart INTEGER
+    lastStart INTEGER,
+    position INTEGER,
+    priority TEXT NOT NULL DEFAULT 'Normal'
   )
 `).run();
 
