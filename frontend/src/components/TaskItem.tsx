@@ -2,9 +2,15 @@ import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Check, Edit2, Trash2 } from "lucide-react";
 import { DEFAULT_PRIORITY, PRIORITY_COLORS } from "../constants/priority";
-import { DEFAULT_STATUS, canStart } from "../constants/status";
-import type { Task, TaskChanges } from "../types";
+import {
+  DEFAULT_STATUS,
+  STATUS_COLORS,
+  STATUSES,
+  canStart,
+} from "../constants/status";
+import type { Status, Task, TaskChanges } from "../types";
 import { formatTime, hhmmToSeconds, secondsToHHmm } from "../utils/time";
+import OptionSelect from "./OptionSelect";
 import PlayPauseButton from "./PlayPauseButton";
 import TaskEditForm, { type TaskDraft } from "./TaskEditForm";
 
@@ -16,6 +22,7 @@ interface TaskItemProps {
   onSave: (changes: TaskChanges) => Promise<void>;
   onToggle: () => void;
   onPause: () => Promise<Task | undefined>;
+  onStatusChange: (status: Status) => void;
   onDelete: () => void;
 }
 
@@ -34,6 +41,7 @@ export default function TaskItem({
   onSave,
   onToggle,
   onPause,
+  onStatusChange,
   onDelete,
 }: TaskItemProps) {
   const [draft, setDraft] = useState<TaskDraft>(emptyDraft);
@@ -69,7 +77,7 @@ export default function TaskItem({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`flex items-center justify-between p-4 rounded-xl shadow-sm ${
-            PRIORITY_COLORS[task.priority]
+            STATUS_COLORS[task.status] ?? PRIORITY_COLORS[task.priority]
           } ${task.isRunning ? "glow border-blue-500" : ""}`}
         >
           <div className="flex items-center flex-1">
@@ -91,9 +99,15 @@ export default function TaskItem({
                 <p className="text-gray-500 text-sm">
                   <span className="font-medium">Priority:</span> {task.priority}
                 </p>
-                <p className="text-gray-500 text-sm">
-                  <span className="font-medium">Status:</span> {task.status}
-                </p>
+                <label className="text-gray-500 text-sm">
+                  <span className="font-medium">Status:</span>{" "}
+                  <OptionSelect
+                    value={task.status}
+                    options={STATUSES}
+                    onChange={onStatusChange}
+                    className="border rounded px-1 py-0.5 bg-white/70 text-gray-700"
+                  />
+                </label>
               </div>
             )}
           </div>

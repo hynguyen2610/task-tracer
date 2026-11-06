@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
-import type { Task, TaskChanges } from "../types";
+import type { Status, Task, TaskChanges } from "../types";
 import TaskItem from "./TaskItem";
 
 interface TaskListProps {
@@ -10,6 +10,7 @@ interface TaskListProps {
   onPause: (id: number) => Promise<Task | undefined>;
   onDelete: (id: number) => void;
   onUpdate: (id: number, changes: TaskChanges) => Promise<void>;
+  onStatusChange: (id: number, status: Status) => void;
   onMove: (fromIndex: number, toIndex: number) => void;
 }
 
@@ -19,6 +20,7 @@ export default function TaskList({
   onPause,
   onDelete,
   onUpdate,
+  onStatusChange,
   onMove,
 }: TaskListProps) {
   // Only one task can be edited at a time.
@@ -51,6 +53,7 @@ export default function TaskList({
                 }}
                 onToggle={() => onToggle(task.id)}
                 onPause={() => onPause(task.id)}
+                onStatusChange={(status) => onStatusChange(task.id, status)}
                 onDelete={() => onDelete(task.id)}
               />
             ))}

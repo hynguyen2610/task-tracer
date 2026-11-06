@@ -31,7 +31,8 @@ A new database starts with one task, "First task of the day".
 Values, highest first: `Highest`, `High`, `Normal`, `Low`. Default `Normal`.
 
 Priority only affects how a task looks: each value has its own background and
-left-border color. It doesn't change ordering or the timer.
+left-border color. `In progress` and `Done` tasks show their status color
+instead (see 4.5), so priority color only shows on `Todo` and `Canceled` tasks. It doesn't change ordering or the timer.
 
 ## 4. Status
 
@@ -79,8 +80,13 @@ Reopening a `Done` or `Canceled` task (setting it back to `Todo` or
 
 ### 4.5 Display
 
-- View mode shows the status under the priority, as `Status: <value>`.
-- The edit form gets a Status dropdown with the four values, next to Priority.
+- Some statuses have their own row color, which replaces the priority color:
+  - `In progress`: light blue. The running task also pulses (the glow).
+  - `Done`: green, stronger than the `Normal` priority green.
+  - `Todo` and `Canceled` keep the priority color.
+- Each task shows a Status dropdown under the priority. Picking a value saves
+  it right away, with the rules in 4.4; no need to open the edit form.
+- The edit form also has a Status dropdown, after Priority.
 - The play button is disabled for `Done` and `Canceled` tasks.
 
 ### 4.6 Existing data
@@ -129,7 +135,7 @@ Base URL `http://localhost:4000`. All bodies are JSON.
 |---------------------------|-----------------------------------------|-----------------------------|
 | `GET /tasks`              | none                                    | All tasks, by `position`.   |
 | `POST /tasks`             | `{ title, priority }`                   | The created task, as `Todo`. |
-| `PUT /tasks/:id`          | `{ title, totalSeconds?, priority?, status? }` | `{ success: true }`. `400` if `status` isn't one of the four. Applies 4.4. |
+| `PUT /tasks/:id`          | `{ title?, totalSeconds?, priority?, status? }`; fields left out keep their value | `{ success: true }`. `400` if `status` isn't one of the four. Applies 4.4. |
 | `POST /tasks/:id/toggle`  | none                                    | All tasks, by `position`. `404` if not found; `409` when starting a `Done` or `Canceled` task. Applies 4.3. |
 | `POST /tasks/reorder`     | `{ ids: number[] }`, the full new order | `{ success: true }`. `400` if `ids` isn't an array. |
 | `DELETE /tasks/:id`       | none                                    | `{ success: true }`         |

@@ -14,6 +14,7 @@ export default function App() {
     toggleTask,
     pauseTask,
     updateTask,
+    setStatus,
     deleteTask,
     moveTask,
   } = useTasks();
@@ -37,6 +38,7 @@ export default function App() {
           onPause={pauseTask}
           onDelete={deleteTask}
           onUpdate={updateTask}
+          onStatusChange={setStatus}
           onMove={moveTask}
         />
       </div>

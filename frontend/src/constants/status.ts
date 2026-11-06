@@ -4,6 +4,16 @@ export const STATUSES: Status[] = ["Todo", "In progress", "Done", "Canceled"];
 
 export const DEFAULT_STATUS: Status = "Todo";
 
+/**
+ * Row colors that replace the priority color for a status. Done uses a
+ * stronger green than Normal priority so the two stay distinguishable.
+ * Todo and Canceled keep the priority color.
+ */
+export const STATUS_COLORS: Partial<Record<Status, string>> = {
+  "In progress": "bg-sky-100 border-l-4 border-sky-500",
+  Done: "bg-emerald-200 border-l-4 border-emerald-600",
+};
+
 /** Done and Canceled tasks can't be started. */
 export function canStart(status: Status): boolean {
   return status !== "Done" && status !== "Canceled";

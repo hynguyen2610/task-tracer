@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api/tasks";
-import type { Priority, Task, TaskChanges } from "../types";
+import type { Priority, Status, Task, TaskChanges } from "../types";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -63,6 +63,11 @@ export function useTasks() {
     fetchTasks();
   };
 
+  const setStatus = async (id: number, status: Status) => {
+    await api.updateStatus(id, status);
+    fetchTasks();
+  };
+
   const deleteTask = async (id: number) => {
     await api.deleteTask(id);
     fetchTasks();
@@ -85,6 +90,7 @@ export function useTasks() {
     toggleTask,
     pauseTask,
     updateTask,
+    setStatus,
     deleteTask,
     moveTask,
   };

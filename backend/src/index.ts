@@ -83,7 +83,7 @@ app.put("/tasks/:id", (req, res) => {
     }
     db.prepare(
       `UPDATE tasks
-       SET title = ?,
+       SET title = COALESCE(?, title),
            totalSeconds = COALESCE(?, totalSeconds),
            priority = COALESCE(?, priority),
            status = COALESCE(?, status)

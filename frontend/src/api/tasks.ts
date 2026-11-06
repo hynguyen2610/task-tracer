@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Priority, Task, TaskChanges } from "../types";
+import type { Priority, Status, Task, TaskChanges } from "../types";
 
 const API_URL = "http://localhost:4000";
 
@@ -23,6 +23,11 @@ export async function updateTask(
   changes: TaskChanges
 ) {
   await axios.put(`${API_URL}/tasks/${id}`, changes);
+}
+
+/** Changes only the status; the backend keeps every other field as it is. */
+export async function updateStatus(id: number, status: Status) {
+  await axios.put(`${API_URL}/tasks/${id}`, { status });
 }
 
 export async function deleteTask(id: number) {
