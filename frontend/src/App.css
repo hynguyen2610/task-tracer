@@ -10,3 +10,16 @@
 .glow {
   animation: glow 1.5s infinite ease-in-out;
 }
+
+/* Tailwind's reset removes list styles; restore them so the report preview
+   looks like the pasted email. */
+.report-preview ol {
+  list-style: decimal;
+  padding-left: 2.5em;
+}
+.report-preview ul {
+  padding-left: 2em;
+}
+.report-preview p {
+  margin: 0 0 1em;
+}
