@@ -1,6 +1,12 @@
 import type { Status } from "../types";
 
-export const STATUSES: Status[] = ["Todo", "In progress", "Done", "Canceled"];
+export const STATUSES: Status[] = [
+  "Todo",
+  "In progress",
+  "Pending",
+  "Done",
+  "Canceled",
+];
 
 export const DEFAULT_STATUS: Status = "Todo";
 
@@ -11,10 +17,11 @@ export const DEFAULT_STATUS: Status = "Todo";
  */
 export const STATUS_COLORS: Partial<Record<Status, string>> = {
   "In progress": "bg-sky-100 border-l-4 border-sky-500",
+  Pending: "bg-amber-100 border-l-4 border-amber-500",
   Done: "bg-emerald-200 border-l-4 border-emerald-600",
 };
 
-/** Done and Canceled tasks can't be started. */
+/** Pending, Done and Canceled tasks can't be started. */
 export function canStart(status: Status): boolean {
-  return status !== "Done" && status !== "Canceled";
+  return status === "Todo" || status === "In progress";
 }

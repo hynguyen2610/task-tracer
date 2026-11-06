@@ -31,6 +31,7 @@ const emptyDraft: TaskDraft = {
   time: "",
   priority: DEFAULT_PRIORITY,
   status: DEFAULT_STATUS,
+  statusNote: "",
 };
 
 export default function TaskItem({
@@ -55,6 +56,7 @@ export default function TaskItem({
       time: secondsToHHmm(current.totalSeconds),
       priority: current.priority,
       status: current.status,
+      statusNote: current.statusNote ?? "",
     });
     onStartEdit();
   };
@@ -65,6 +67,7 @@ export default function TaskItem({
       totalSeconds: hhmmToSeconds(draft.time),
       priority: draft.priority,
       status: draft.status,
+      statusNote: draft.statusNote,
     });
     setDraft(emptyDraft);
   };
@@ -107,6 +110,9 @@ export default function TaskItem({
                     onChange={onStatusChange}
                     className="border rounded px-1 py-0.5 bg-white/70 text-gray-700"
                   />
+                  {task.statusNote && (
+                    <span className="ml-2 italic">({task.statusNote})</span>
+                  )}
                 </label>
               </div>
             )}

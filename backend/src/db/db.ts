@@ -11,19 +11,38 @@ db.prepare(`
     lastStart INTEGER,
     position INTEGER,
     priority TEXT NOT NULL DEFAULT 'Normal',
-    status TEXT NOT NULL DEFAULT 'Todo'
+    status TEXT NOT NULL DEFAULT 'Todo',
+    statusNote TEXT,
+    startedAt INTEGER,
+    lastWorkedAt INTEGER
   )
 `).run();
 
-// Databases created before task status existed: add the column, and mark a
-// running task as In progress so a running task is never Todo.
-const columns = db.prepare("PRAGMA table_info(tasks)").all() as { name: string }[];
-if (!columns.some((c) => c.name === "status")) {
+/**
+ * Adds a column to databases created before it existed, then runs the
+ * backfill statements, all in one transaction.
+ */
+function addColumnIfMissing(name: string, definition: string, backfill: string[] = []) {
+  const columns = db.prepare("PRAGMA table_info(tasks)").all() as { name: string }[];
+  if (columns.some((c) => c.name === name)) return;
   db.transaction(() => {
-    db.prepare("ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'Todo'").run();
-    db.prepare("UPDATE tasks SET status = 'In progress' WHERE isRunning = 1").run();
+    db.prepare(`ALTER TABLE tasks ADD COLUMN ${name} ${definition}`).run();
+    backfill.forEach((sql) => db.prepare(sql).run());
   })();
 }
+
+// A running task is never Todo.
+addColumnIfMissing("status", "TEXT NOT NULL DEFAULT 'Todo'", [
+  "UPDATE tasks SET status = 'In progress' WHERE isRunning = 1",
+]);
+addColumnIfMissing("statusNote", "TEXT");
+// Older tasks only know when they were last started; use that as the best guess.
+addColumnIfMissing("startedAt", "INTEGER", [
+  "UPDATE tasks SET startedAt = lastStart WHERE lastStart IS NOT NULL",
+]);
+addColumnIfMissing("lastWorkedAt", "INTEGER", [
+  "UPDATE tasks SET lastWorkedAt = lastStart WHERE lastStart IS NOT NULL",
+]);
 
 const count = (db.prepare("SELECT COUNT(*) as c FROM tasks").get() as { c: number }).c;
 if (count === 0) {

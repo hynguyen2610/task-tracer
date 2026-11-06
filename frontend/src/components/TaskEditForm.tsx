@@ -10,6 +10,7 @@ export interface TaskDraft {
   time: string;
   priority: Priority;
   status: Status;
+  statusNote: string;
 }
 
 interface TaskEditFormProps {
@@ -62,6 +63,18 @@ export default function TaskEditForm({
         options={STATUSES}
         onChange={(status) => onChange({ ...draft, status })}
         className="border rounded-lg px-2 py-1"
+      />
+
+      <label className={labelClass}>Status note (optional)</label>
+      <input
+        type="text"
+        value={draft.statusNote}
+        placeholder="e.g. Waiting for Kiro"
+        onChange={(e) => onChange({ ...draft, statusNote: e.target.value })}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSave();
+        }}
+        className="border rounded-lg px-2 py-1 w-full"
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 import db from "./db/db"
-import { CLOSED_STATUSES, STATUSES, Task } from "./types/task"
+import { STATUSES, Task, UNSTARTABLE_STATUSES } from "./types/task"
 
 const app = express()
 app.use(cors())
@@ -21,8 +21,8 @@ function updateRunningTask() {
     if (t.lastStart) {
       const elapsed = Math.floor((now - t.lastStart) / 1000)
       db.prepare(
-        "UPDATE tasks SET totalSeconds = totalSeconds + ?, lastStart = ? WHERE id = ?"
-      ).run(elapsed, now, t.id)
+        "UPDATE tasks SET totalSeconds = totalSeconds + ?, lastStart = ?, lastWorkedAt = ? WHERE id = ?"
+      ).run(elapsed, now, now, t.id)
     }
   })
 }
@@ -49,10 +49,11 @@ app.post("/tasks/:id/toggle", (req, res) => {
   updateRunningTask()
   const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(id) as Task
   if (!task) return res.status(404).send("Task not found")
+  const now = Date.now()
   if (task.isRunning) {
-    db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(id)
+    db.prepare("UPDATE tasks SET isRunning = 0, lastWorkedAt = ? WHERE id = ?").run(now, id)
   } else {
-    if (CLOSED_STATUSES.includes(task.status)) {
+    if (UNSTARTABLE_STATUSES.includes(task.status)) {
       return res.status(409).json({ error: `Cannot start a ${task.status} task` })
     }
     db.transaction(() => {
@@ -61,34 +62,60 @@ app.post("/tasks/:id/toggle", (req, res) => {
         `UPDATE tasks
          SET isRunning = 1,
              lastStart = ?,
+             lastWorkedAt = ?,
+             startedAt = COALESCE(startedAt, ?),
              status = CASE WHEN status = 'Todo' THEN 'In progress' ELSE status END
          WHERE id = ?`
-      ).run(Date.now(), id)
+      ).run(now, now, now, id)
     })()
   }
   res.json(db.prepare("SELECT * FROM tasks ORDER BY position ASC").all())
 })
 
+// Fields left out (or null) keep their current value. An empty statusNote
+// clears the note.
 app.put("/tasks/:id", (req, res) => {
-  const { title, totalSeconds, priority, status } = req.body
-  if (status !== undefined && !STATUSES.includes(status)) {
+  const id = parseInt(req.params.id, 10)
+  const { title, totalSeconds, priority, status, statusNote } = req.body
+  if (status != null && !STATUSES.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${STATUSES.join(", ")}` })
   }
+  const getTask = () => db.prepare("SELECT * FROM tasks WHERE id = ?").get(id) as Task | undefined
+  if (!getTask()) return res.status(404).send("Task not found")
+
   db.transaction(() => {
     // A running task must stay In progress, so any other status stops the
     // timer. Bring its time up to date first so no elapsed time is lost.
-    if (status !== undefined && status !== "In progress") {
+    if (status != null && status !== "In progress") {
       updateRunningTask()
-      db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(req.params.id)
+      db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(id)
     }
+    const current = getTask()!
+    const next = {
+      title: title ?? current.title,
+      totalSeconds: totalSeconds ?? current.totalSeconds,
+      priority: priority ?? current.priority,
+      status: (status ?? current.status) as Task["status"],
+      statusNote:
+        statusNote === undefined ? current.statusNote : String(statusNote ?? "").trim() || null,
+    }
+    const now = Date.now()
+    const worked = next.status !== current.status || next.totalSeconds !== current.totalSeconds
     db.prepare(
       `UPDATE tasks
-       SET title = COALESCE(?, title),
-           totalSeconds = COALESCE(?, totalSeconds),
-           priority = COALESCE(?, priority),
-           status = COALESCE(?, status)
+       SET title = ?, totalSeconds = ?, priority = ?, status = ?, statusNote = ?,
+           startedAt = ?, lastWorkedAt = ?
        WHERE id = ?`
-    ).run(title, totalSeconds, priority, status, req.params.id)
+    ).run(
+      next.title,
+      next.totalSeconds,
+      next.priority,
+      next.status,
+      next.statusNote,
+      current.startedAt ?? (next.status !== "Todo" ? now : null),
+      worked ? now : current.lastWorkedAt,
+      id
+    )
   })()
   res.json({ success: true })
 })
