@@ -1,12 +1,15 @@
-import type { Priority } from "../types";
+import { PRIORITIES } from "../constants/priority";
+import { STATUSES } from "../constants/status";
+import type { Priority, Status } from "../types";
 import DurationInput from "./DurationInput";
-import PrioritySelect from "./PrioritySelect";
+import OptionSelect from "./OptionSelect";
 
 export interface TaskDraft {
   title: string;
   /** "HH:mm" */
   time: string;
   priority: Priority;
+  status: Status;
 }
 
 interface TaskEditFormProps {
@@ -46,9 +49,18 @@ export default function TaskEditForm({
       />
 
       <label className={labelClass}>Priority</label>
-      <PrioritySelect
+      <OptionSelect
         value={draft.priority}
+        options={PRIORITIES}
         onChange={(priority) => onChange({ ...draft, priority })}
+        className="border rounded-lg px-2 py-1"
+      />
+
+      <label className={labelClass}>Status</label>
+      <OptionSelect
+        value={draft.status}
+        options={STATUSES}
+        onChange={(status) => onChange({ ...draft, status })}
         className="border rounded-lg px-2 py-1"
       />
     </div>

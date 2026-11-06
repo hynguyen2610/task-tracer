@@ -7,6 +7,7 @@ import TaskItem from "./TaskItem";
 interface TaskListProps {
   tasks: Task[];
   onToggle: (id: number) => void;
+  onPause: (id: number) => Promise<Task | undefined>;
   onDelete: (id: number) => void;
   onUpdate: (id: number, changes: TaskChanges) => Promise<void>;
   onMove: (fromIndex: number, toIndex: number) => void;
@@ -15,6 +16,7 @@ interface TaskListProps {
 export default function TaskList({
   tasks,
   onToggle,
+  onPause,
   onDelete,
   onUpdate,
   onMove,
@@ -48,6 +50,7 @@ export default function TaskList({
                   setEditingId(null);
                 }}
                 onToggle={() => onToggle(task.id)}
+                onPause={() => onPause(task.id)}
                 onDelete={() => onDelete(task.id)}
               />
             ))}

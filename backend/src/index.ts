@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 import db from "./db/db"
-import { Task } from "./types/task"
+import { CLOSED_STATUSES, STATUSES, Task } from "./types/task"
 
 const app = express()
 app.use(cors())
@@ -52,21 +52,44 @@ app.post("/tasks/:id/toggle", (req, res) => {
   if (task.isRunning) {
     db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(id)
   } else {
-    db.prepare("UPDATE tasks SET isRunning = 0").run()
-    db.prepare("UPDATE tasks SET isRunning = 1, lastStart = ? WHERE id = ?").run(Date.now(), id)
+    if (CLOSED_STATUSES.includes(task.status)) {
+      return res.status(409).json({ error: `Cannot start a ${task.status} task` })
+    }
+    db.transaction(() => {
+      db.prepare("UPDATE tasks SET isRunning = 0").run()
+      db.prepare(
+        `UPDATE tasks
+         SET isRunning = 1,
+             lastStart = ?,
+             status = CASE WHEN status = 'Todo' THEN 'In progress' ELSE status END
+         WHERE id = ?`
+      ).run(Date.now(), id)
+    })()
   }
   res.json(db.prepare("SELECT * FROM tasks ORDER BY position ASC").all())
 })
 
 app.put("/tasks/:id", (req, res) => {
-  const { title, totalSeconds, priority } = req.body
-  db.prepare(
-    `UPDATE tasks 
-     SET title = ?, 
-         totalSeconds = COALESCE(?, totalSeconds), 
-         priority = COALESCE(?, priority) 
-     WHERE id = ?`
-  ).run(title, totalSeconds, priority, req.params.id)
+  const { title, totalSeconds, priority, status } = req.body
+  if (status !== undefined && !STATUSES.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${STATUSES.join(", ")}` })
+  }
+  db.transaction(() => {
+    // A running task must stay In progress, so any other status stops the
+    // timer. Bring its time up to date first so no elapsed time is lost.
+    if (status !== undefined && status !== "In progress") {
+      updateRunningTask()
+      db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(req.params.id)
+    }
+    db.prepare(
+      `UPDATE tasks
+       SET title = ?,
+           totalSeconds = COALESCE(?, totalSeconds),
+           priority = COALESCE(?, priority),
+           status = COALESCE(?, status)
+       WHERE id = ?`
+    ).run(title, totalSeconds, priority, status, req.params.id)
+  })()
   res.json({ success: true })
 })
 

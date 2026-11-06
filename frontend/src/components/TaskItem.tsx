@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Check, Edit2, Trash2 } from "lucide-react";
 import { DEFAULT_PRIORITY, PRIORITY_COLORS } from "../constants/priority";
+import { DEFAULT_STATUS, canStart } from "../constants/status";
 import type { Task, TaskChanges } from "../types";
 import { formatTime, hhmmToSeconds, secondsToHHmm } from "../utils/time";
 import PlayPauseButton from "./PlayPauseButton";
@@ -14,10 +15,16 @@ interface TaskItemProps {
   onStartEdit: () => void;
   onSave: (changes: TaskChanges) => Promise<void>;
   onToggle: () => void;
+  onPause: () => Promise<Task | undefined>;
   onDelete: () => void;
 }
 
-const emptyDraft: TaskDraft = { title: "", time: "", priority: DEFAULT_PRIORITY };
+const emptyDraft: TaskDraft = {
+  title: "",
+  time: "",
+  priority: DEFAULT_PRIORITY,
+  status: DEFAULT_STATUS,
+};
 
 export default function TaskItem({
   task,
@@ -26,15 +33,20 @@ export default function TaskItem({
   onStartEdit,
   onSave,
   onToggle,
+  onPause,
   onDelete,
 }: TaskItemProps) {
   const [draft, setDraft] = useState<TaskDraft>(emptyDraft);
 
-  const startEditing = () => {
+  const startEditing = async () => {
+    // Pause a running task first, so the form shows its up-to-date time and
+    // no time is counted while it is being edited.
+    const current = task.isRunning ? ((await onPause()) ?? task) : task;
     setDraft({
-      title: task.title,
-      time: secondsToHHmm(task.totalSeconds),
-      priority: task.priority,
+      title: current.title,
+      time: secondsToHHmm(current.totalSeconds),
+      priority: current.priority,
+      status: current.status,
     });
     onStartEdit();
   };
@@ -44,6 +56,7 @@ export default function TaskItem({
       title: draft.title,
       totalSeconds: hhmmToSeconds(draft.time),
       priority: draft.priority,
+      status: draft.status,
     });
     setDraft(emptyDraft);
   };
@@ -78,12 +91,24 @@ export default function TaskItem({
                 <p className="text-gray-500 text-sm">
                   <span className="font-medium">Priority:</span> {task.priority}
                 </p>
+                <p className="text-gray-500 text-sm">
+                  <span className="font-medium">Status:</span> {task.status}
+                </p>
               </div>
             )}
           </div>
 
           <div className="flex items-center space-x-2">
-            <PlayPauseButton isRunning={task.isRunning} onClick={onToggle} />
+            <PlayPauseButton
+              isRunning={task.isRunning}
+              onClick={onToggle}
+              disabled={!task.isRunning && !canStart(task.status)}
+              title={
+                canStart(task.status)
+                  ? undefined
+                  : `${task.status} tasks can't be started`
+              }
+            />
 
             {isEditing ? (
               <button

@@ -6,6 +6,7 @@ export function exportToExcel(tasks: Task[]) {
   const data = tasks.map((t) => ({
     "Total Time (hours)": (t.totalSeconds / 3600).toFixed(2),
     Title: t.title,
+    Status: t.status,
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(data);
@@ -17,6 +18,7 @@ export function exportToExcel(tasks: Task[]) {
   worksheet["!cols"] = [
     { wch: 18 }, // Total Time column fixed width
     { wch: maxTitleLength + 5 }, // Title column auto-sized with padding
+    { wch: 12 }, // Status column fits "In progress"
   ];
 
   const workbook = XLSX.utils.book_new();

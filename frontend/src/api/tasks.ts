@@ -12,8 +12,10 @@ export async function createTask(title: string, priority: Priority) {
   await axios.post<Task>(`${API_URL}/tasks`, { title, priority });
 }
 
-export async function toggleTask(id: number) {
-  await axios.post<Task[]>(`${API_URL}/tasks/${id}/toggle`);
+/** Starts or pauses a task. Returns every task, with times brought up to date. */
+export async function toggleTask(id: number): Promise<Task[]> {
+  const res = await axios.post<Task[]>(`${API_URL}/tasks/${id}/toggle`);
+  return res.data;
 }
 
 export async function updateTask(

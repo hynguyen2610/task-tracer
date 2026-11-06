@@ -45,6 +45,16 @@ export function useTasks() {
     fetchTasks();
   };
 
+  /**
+   * Pauses a running task and returns it with its time brought up to date.
+   * Only call it for a task that is running: the endpoint toggles.
+   */
+  const pauseTask = async (id: number): Promise<Task | undefined> => {
+    const all = await api.toggleTask(id);
+    setTasks(all);
+    return all.find((t) => t.id === id);
+  };
+
   const updateTask = async (
     id: number,
     changes: TaskChanges
@@ -73,6 +83,7 @@ export function useTasks() {
     togglePolling,
     addTask,
     toggleTask,
+    pauseTask,
     updateTask,
     deleteTask,
     moveTask,

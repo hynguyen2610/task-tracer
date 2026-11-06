@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
-import { DEFAULT_PRIORITY } from "../constants/priority";
+import { DEFAULT_PRIORITY, PRIORITIES } from "../constants/priority";
 import type { Priority } from "../types";
-import PrioritySelect from "./PrioritySelect";
+import OptionSelect from "./OptionSelect";
 
 interface NewTaskFormProps {
   onAdd: (title: string, priority: Priority) => Promise<void>;
@@ -33,8 +33,9 @@ export default function NewTaskForm({ onAdd }: NewTaskFormProps) {
         }}
         className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
-      <PrioritySelect
+      <OptionSelect
         value={priority}
+        options={PRIORITIES}
         onChange={setPriority}
         className="border rounded-lg px-2 py-2"
       />

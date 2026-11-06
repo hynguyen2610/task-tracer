@@ -12,6 +12,7 @@ export default function App() {
     togglePolling,
     addTask,
     toggleTask,
+    pauseTask,
     updateTask,
     deleteTask,
     moveTask,
@@ -33,6 +34,7 @@ export default function App() {
         <TaskList
           tasks={tasks}
           onToggle={toggleTask}
+          onPause={pauseTask}
           onDelete={deleteTask}
           onUpdate={updateTask}
           onMove={moveTask}
