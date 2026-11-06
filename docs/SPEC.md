@@ -191,7 +191,9 @@ are left out.
 ### 8.3 Email text
 
 The dialog has fields for greeting, intro, next planned tasks, issues and
-signature, with a live preview. Next planned tasks takes one item per line; a
+signature, with a live preview. Above them it shows **Total ETA (rounded)**:
+the sum of the report's rounded ETAs, so it matches what a reader adds up from
+the email. It is shown in the dialog only, not copied. Next planned tasks takes one item per line; a
 line starting with `-` becomes a sub-item of the line above. The fields are
 saved in the browser (`localStorage`) and come back filled in next time.
 

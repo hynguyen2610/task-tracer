@@ -63,10 +63,18 @@ export function formatReportDate(date: Date): string {
 }
 
 /** Tracked time rounded to the nearest quarter hour, never 0 once time is tracked. */
+export function roundedHours(totalSeconds: number): number {
+  const hours = Math.round(totalSeconds / 900) / 4;
+  return hours === 0 && totalSeconds > 0 ? 0.25 : hours;
+}
+
 export function formatEta(totalSeconds: number): string {
-  let hours = Math.round(totalSeconds / 900) / 4;
-  if (hours === 0 && totalSeconds > 0) hours = 0.25;
-  return `${hours} hour`;
+  return `${roundedHours(totalSeconds)} hour`;
+}
+
+/** Sum of the ETAs shown in the report, so it matches what the reader adds up. */
+export function totalRoundedHours(tasks: Task[]): number {
+  return tasks.reduce((sum, t) => sum + roundedHours(t.totalSeconds), 0);
 }
 
 const lines = (text: string) =>

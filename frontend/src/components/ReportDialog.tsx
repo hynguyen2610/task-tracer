@@ -6,6 +6,7 @@ import {
   buildReportText,
   formatReportDate,
   selectReportTasks,
+  totalRoundedHours,
   type ReportSettings,
 } from "../report/dailyReport";
 import {
@@ -88,6 +89,11 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
         <p className="text-sm text-gray-500">
           {reportTasks.length} task{reportTasks.length === 1 ? "" : "s"}: worked on
           today, or still In progress / Pending.
+        </p>
+        <p className="text-sm text-gray-700 mt-1">
+          <span className="font-medium">Total ETA (rounded):</span>{" "}
+          {totalRoundedHours(reportTasks)} hour
+          <span className="text-gray-500"> · sum of the ETAs in the report, not copied</span>
         </p>
 
         <div className="grid md:grid-cols-2 gap-6 mt-2">
