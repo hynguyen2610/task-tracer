@@ -297,6 +297,36 @@ test.describe("statistics", () => {
     await expect(page.getByRole("heading", { name: "Task Tracker" })).toBeVisible();
   });
 
+  test("sets and remembers workday hours", async ({ page }) => {
+    await openStats(page);
+    const button = page.getByRole("button", { name: /Workday hours/ });
+    await expect(button).toContainText("08:30–18:00");
+
+    await button.click();
+    const dialog = page.getByRole("dialog", { name: "Workday hours" });
+    await expect(dialog.getByLabel("Lunch starts")).toHaveValue("12:00");
+    await expect(dialog.getByLabel("Lunch ends")).toHaveValue("13:30");
+
+    // Out of order times can't be saved.
+    await dialog.getByLabel("Workday ends").fill("08:00");
+    await expect(dialog.getByRole("alert")).toContainText("end after it starts");
+    await expect(dialog.getByRole("button", { name: "Save" })).toBeDisabled();
+
+    await dialog.getByLabel("Workday starts").fill("07:00");
+    await dialog.getByLabel("Workday ends").fill("17:00");
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(button).toContainText("07:00–17:00");
+
+    await page.reload();
+    await openStats(page);
+    await expect(button).toContainText("07:00–17:00");
+    await button.click();
+    await dialog.getByRole("button", { name: "Reset to defaults" }).click();
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await expect(button).toContainText("08:30–18:00");
+  });
+
   test("shows today's sessions, status changes and time adjustments", async ({ page }) => {
     const title = uniqueTitle("Tracked");
     const row = await addTask(page, title);

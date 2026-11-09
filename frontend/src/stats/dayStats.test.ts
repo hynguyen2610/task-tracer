@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { Activity, TaskEvent, WorkSession } from "../types";
 import { activeDays, buildDayStats, dayKey, dayRange, MIN_BREAK_MS } from "./dayStats";
+import {
+  clockToMinutes,
+  DEFAULT_WORKDAY,
+  minutesToClock,
+  workdayError,
+  workWindows,
+  type WorkdaySettings,
+} from "./workday";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -43,14 +51,14 @@ describe("buildDayStats", () => {
       sessions: [
         session(1, at(9), at(10, 30)),
         session(2, at(10, 30), at(12)), // switch, no gap
-        session(1, at(13), at(14)), // 1 h lunch break
+        session(1, at(14), at(15)), // lunch (not a break), then a 30 min break
       ],
     });
-    expect(s.span).toEqual({ start: at(9), end: at(14) });
+    expect(s.span).toEqual({ start: at(9), end: at(15) });
     expect(s.trackedMs).toBe(4 * HOUR);
-    expect(s.breakMs).toBe(HOUR);
+    expect(s.breakMs).toBe(30 * MIN);
     expect(s.entries.filter((e) => e.kind === "break")).toEqual([
-      { kind: "break", at: at(12), end: at(13), ms: HOUR },
+      { kind: "break", at: at(12), end: at(14), ms: 30 * MIN },
     ]);
     expect(s.perTask.map((t) => [t.title, t.totalMs])).toEqual([
       ["Write report", 2.5 * HOUR],
@@ -136,6 +144,71 @@ describe("buildDayStats", () => {
       "start", "stop", "status", "start", // 10:00 switch
       "stop", "status", "break", // 11:00 stop, Pending, then the break
       "start", "stop",
+    ]);
+  });
+});
+
+describe("breaks and the workday", () => {
+  const withWorkday = (sessions: WorkSession[], workday: WorkdaySettings = DEFAULT_WORKDAY) =>
+    buildDayStats({ sessions, events: [] }, DAY, NEXT_DAY, NEXT_DAY + HOUR, titles, workday);
+
+  it("uses 08:30–18:00 with lunch 12:00–13:30 by default", () => {
+    expect(DEFAULT_WORKDAY).toEqual({ start: 510, lunchStart: 720, lunchEnd: 810, end: 1080 });
+  });
+
+  it("doesn't count a gap that is exactly lunch", () => {
+    const s = withWorkday([session(1, at(9), at(12)), session(1, at(13, 30), at(17))]);
+    expect(s.breakMs).toBe(0);
+    expect(s.entries.some((e) => e.kind === "break")).toBe(false);
+  });
+
+  it("counts only the parts of a gap around lunch", () => {
+    // 11:30–14:00: 30 min before lunch, 30 min after.
+    const s = withWorkday([session(1, at(9), at(11, 30)), session(1, at(14), at(17))]);
+    expect(s.breakMs).toBe(HOUR);
+  });
+
+  it("doesn't count gaps before or after working hours", () => {
+    const s = withWorkday([
+      session(1, at(7), at(8)), // 08:00–09:00: only 08:30–09:00 counts
+      session(1, at(9), at(17, 30)), // 17:30–20:00: only 17:30–18:00 counts
+      session(1, at(20), at(21)),
+    ]);
+    expect(s.breakMs).toBe(HOUR);
+    expect(s.entries.filter((e) => e.kind === "break").map((e) => (e as { ms: number }).ms)).toEqual([
+      30 * MIN,
+      30 * MIN,
+    ]);
+  });
+
+  it("follows custom working hours", () => {
+    const workday = { start: 9 * 60, lunchStart: 12 * 60, lunchEnd: 13 * 60, end: 17 * 60 };
+    const s = withWorkday([session(1, at(10), at(11, 30)), session(1, at(13), at(18))], workday);
+    expect(s.breakMs).toBe(30 * MIN); // 11:30–12:00; lunch ends at 13:00
+  });
+});
+
+describe("workday settings", () => {
+  it("rejects times out of order", () => {
+    expect(workdayError(DEFAULT_WORKDAY)).toBeNull();
+    expect(workdayError({ ...DEFAULT_WORKDAY, end: 500 })).toMatch(/end after/);
+    expect(workdayError({ ...DEFAULT_WORKDAY, lunchEnd: 700 })).toMatch(/Lunch must end/);
+    expect(workdayError({ ...DEFAULT_WORKDAY, lunchStart: 480 })).toMatch(/inside/);
+    // No lunch at all is fine.
+    expect(workdayError({ ...DEFAULT_WORKDAY, lunchStart: 720, lunchEnd: 720 })).toBeNull();
+  });
+
+  it("converts clock text", () => {
+    expect(clockToMinutes("08:30")).toBe(510);
+    expect(clockToMinutes("24:00")).toBeNull();
+    expect(clockToMinutes("")).toBeNull();
+    expect(minutesToClock(810)).toBe("13:30");
+  });
+
+  it("splits the day at lunch", () => {
+    expect(workWindows(DAY, DEFAULT_WORKDAY)).toEqual([
+      { start: at(8, 30), end: at(12) },
+      { start: at(13, 30), end: at(18) },
     ]);
   });
 });

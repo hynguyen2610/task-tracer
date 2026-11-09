@@ -1,4 +1,5 @@
 import type { Activity, Status } from "../types";
+import { DEFAULT_WORKDAY, overlapMs, workWindows, type WorkdaySettings } from "./workday";
 
 // Turns raw work history into one day's statistics. See docs/SPEC.md 9.
 
@@ -24,6 +25,7 @@ export interface Segment {
 export type TimelineEntry =
   | { kind: "start"; at: number; segment: Segment }
   | { kind: "stop"; at: number; segment: Segment; workedMs: number }
+  /** `ms` is the part of `at`–`end` inside working hours, outside lunch. */
   | { kind: "break"; at: number; end: number; ms: number }
   | { kind: "status"; at: number; taskId: number; title: string; status: Status }
   | { kind: "adjustment"; at: number; taskId: number; title: string; fromSeconds: number; toSeconds: number };
@@ -48,6 +50,7 @@ export interface DayStats {
   adjustmentMs: number;
   /** Tracked plus adjustments, never below 0. */
   workMs: number;
+  /** Breaks inside working hours, outside lunch. */
   breakMs: number;
   perTask: TaskTotal[];
 }
@@ -71,14 +74,18 @@ export function dayKey(ms: number | Date): string {
  *
  * @param titles current titles of tasks that still exist, by id; others are
  *   treated as deleted and keep the title stored with their history.
+ * @param workday working hours; only the part of a break inside them, and
+ *   outside lunch, counts.
  */
 export function buildDayStats(
   activity: Activity,
   dayStart: number,
   dayEnd: number,
   now: number,
-  titles: Map<number, string>
+  titles: Map<number, string>,
+  workday: WorkdaySettings = DEFAULT_WORKDAY
 ): DayStats {
+  const windows = workWindows(dayStart, workday);
   const nameOf = (taskId: number, stored: string) => ({
     title: titles.get(taskId) ?? stored,
     deleted: !titles.has(taskId),
@@ -109,8 +116,12 @@ export function buildDayStats(
     if (coveredUntil !== null && segment.start > coveredUntil) {
       const gap = segment.start - coveredUntil;
       if (gap >= MIN_BREAK_MS) {
-        breakMs += gap;
-        entries.push({ kind: "break", at: coveredUntil, end: segment.start, ms: gap });
+        // Gaps outside working hours or during lunch aren't breaks.
+        const counted = overlapMs(coveredUntil, segment.start, windows);
+        if (counted > 0) {
+          breakMs += counted;
+          entries.push({ kind: "break", at: coveredUntil, end: segment.start, ms: counted });
+        }
       } else {
         trackedMs += gap;
       }

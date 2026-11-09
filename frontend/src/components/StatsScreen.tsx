@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import * as api from "../api/tasks";
 import { useTimeFormat } from "../hooks/useTimeFormat";
 import { activeDays, buildDayStats, dayKey, dayRange, type TimelineEntry } from "../stats/dayStats";
 import { clock, formatDelta, formatMs } from "../stats/format";
 import { assignTaskColors } from "../stats/taskColors";
+import { loadWorkday, minutesToClock, saveWorkday, type WorkdaySettings } from "../stats/workday";
 import type { Activity, Task } from "../types";
 import DayTimeline from "./DayTimeline";
 import MonthCalendar from "./MonthCalendar";
+import WorkdayDialog from "./WorkdayDialog";
 
 interface StatsScreenProps {
   /** Current tasks, for up-to-date titles. */
@@ -28,6 +30,12 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
   const [monthActivity, setMonthActivity] = useState<Activity>(EMPTY);
   const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState<string | null>(null);
+  const [workday, setWorkday] = useState<WorkdaySettings>(loadWorkday);
+  const [editingWorkday, setEditingWorkday] = useState(false);
+  const changeWorkday = (next: WorkdaySettings) => {
+    setWorkday(next);
+    saveWorkday(next);
+  };
 
   const day = dayRange(selected);
   const isToday = dayKey(selected) === dayKey(new Date());
@@ -61,8 +69,8 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
 
   const titles = useMemo(() => new Map(tasks.map((t) => [t.id, t.title])), [tasks]);
   const stats = useMemo(
-    () => buildDayStats(dayActivity, day.start, day.end, now, titles),
-    [dayActivity, day.start, day.end, now, titles]
+    () => buildDayStats(dayActivity, day.start, day.end, now, titles, workday),
+    [dayActivity, day.start, day.end, now, titles, workday]
   );
   const marked = useMemo(() => activeDays(monthActivity, now), [monthActivity, now]);
   const colors = useMemo(
@@ -90,7 +98,26 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
           <ArrowLeft />
         </button>
         <h1 className="text-2xl font-bold text-gray-800">Statistics</h1>
+        <button
+          onClick={() => setEditingWorkday(true)}
+          title="Set working hours and lunch; breaks only count inside them"
+          className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100"
+        >
+          <Clock className="h-4 w-4" />
+          Workday hours
+          <span className="text-gray-500 tabular-nums">
+            {minutesToClock(workday.start)}–{minutesToClock(workday.end)}
+          </span>
+        </button>
       </div>
+
+      {editingWorkday && (
+        <WorkdayDialog
+          value={workday}
+          onSave={changeWorkday}
+          onClose={() => setEditingWorkday(false)}
+        />
+      )}
 
       <div className="flex flex-col lg:flex-row gap-8">
         <MonthCalendar

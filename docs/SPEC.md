@@ -296,7 +296,7 @@ All times are local. A session that crosses midnight is split there.
 | Figure        | Meaning                                                          |
 |---------------|------------------------------------------------------------------|
 | **Work**      | Tracked time plus that day's adjustments, never below 0. Tracked time is the sessions' time, plus gaps between sessions shorter than 2 minutes. |
-| **Break**     | Gaps of 2 minutes or more between one session's end and the next one's start. Time before the first start and after the last stop doesn't count. |
+| **Break**     | Gaps of 2 minutes or more between one session's end and the next one's start, counting only the part inside working hours and outside lunch (9.4). Time before the first start and after the last stop doesn't count. |
 | **Day span**  | First start to last stop (or now, if a session is running).      |
 | **Adjustments** | Sum of that day's adjustments (after − before), signed.        |
 
@@ -321,6 +321,22 @@ A month grid, weeks starting on Monday, next to the day (above it on narrow
 screens). Days with tracked work or an adjustment have a dot; today is
 outlined; the chosen day is filled. Days after today, and months after this
 one, can't be picked.
+
+### 9.4 Workday hours
+
+The **Workday hours** button (clock icon, top right of the Statistics screen,
+showing the current start–end) opens a dialog with four times: workday start,
+lunch start, lunch end and workday end. Defaults: 08:30, 12:00, 13:30, 18:00.
+
+- Only the part of a gap between 08:30 and 12:00 or between 13:30 and 18:00
+  (with the defaults) is a break. A gap from 11:30 to 14:00 is a 1-hour break;
+  a gap that is exactly lunch, or entirely outside working hours, isn't listed.
+- The 2-minute minimum (9.2) applies to the whole gap, before this cut.
+- The workday must end after it starts, and lunch must be inside it. Lunch
+  start equal to lunch end means no lunch. Save is disabled while the times
+  are invalid; **Reset to defaults** fills in the defaults.
+- Saved in `localStorage`; unreadable or invalid saved values fall back to
+  the defaults. Work time isn't affected, only breaks.
 
 ## 10. Backend interface
 
@@ -384,6 +400,7 @@ The browser has no save dialog; exports are downloaded instead of using
 - A total time typed by hand is recorded as an adjustment and counts toward
   that day's work.
 - Gaps under 2 minutes between sessions count as work, not breaks.
+- Breaks only count inside working hours and outside lunch.
 - Similar titles are offered as suggestions while typing; the user decides.
 - The Statistics button replaced the old global pause button, which only
   paused screen updates.
