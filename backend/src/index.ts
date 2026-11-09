@@ -14,15 +14,20 @@ if (tasksWithoutPosition.length > 0) {
   })
 }
 
+// Adds the whole seconds elapsed and moves lastStart forward by exactly that
+// much, so the leftover fraction counts next time instead of being lost on
+// every poll (same as the Rust core).
 function updateRunningTask() {
   const now = Date.now()
   const tasks = db.prepare("SELECT * FROM tasks WHERE isRunning = 1").all()
   tasks.forEach((t: any) => {
     if (t.lastStart) {
-      const elapsed = Math.floor((now - t.lastStart) / 1000)
-      db.prepare(
-        "UPDATE tasks SET totalSeconds = totalSeconds + ?, lastStart = ?, lastWorkedAt = ? WHERE id = ?"
-      ).run(elapsed, now, now, t.id)
+      const elapsed = Math.floor(Math.max(0, now - t.lastStart) / 1000)
+      if (elapsed > 0) {
+        db.prepare(
+          "UPDATE tasks SET totalSeconds = totalSeconds + ?, lastStart = ?, lastWorkedAt = ? WHERE id = ?"
+        ).run(elapsed, t.lastStart + elapsed * 1000, now, t.id)
+      }
     }
   })
 }
@@ -138,7 +143,7 @@ app.delete("/tasks/:id", (req, res) => {
   res.json({ success: true })
 })
 
-const PORT = 4000
+const PORT = Number(process.env.PORT ?? 4000)
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`)
 })
