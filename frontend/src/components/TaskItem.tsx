@@ -79,6 +79,7 @@ export default function TaskItem({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
+          data-testid="task"
           className={`flex items-center justify-between p-4 rounded-xl shadow-sm ${
             STATUS_COLORS[task.status] ?? PRIORITY_COLORS[task.priority]
           } ${task.isRunning ? "glow border-blue-500" : ""}`}
@@ -133,6 +134,7 @@ export default function TaskItem({
             {isEditing ? (
               <button
                 onClick={save}
+                aria-label="Save task"
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
               >
                 <Check />
@@ -140,6 +142,7 @@ export default function TaskItem({
             ) : (
               <button
                 onClick={startEditing}
+                aria-label="Edit task"
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600"
               >
                 <Edit2 />
@@ -148,6 +151,7 @@ export default function TaskItem({
 
             <button
               onClick={onDelete}
+              aria-label="Delete task"
               className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-500 text-white hover:bg-gray-600"
             >
               <Trash2 />

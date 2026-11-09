@@ -1,3 +1,5 @@
 */node_modules
 backend/tasks.db
 frontend/dist
+frontend/playwright-report
+frontend/test-results

@@ -25,6 +25,7 @@ export default function App() {
         <PlayPauseButton
           isRunning={isPolling}
           onClick={togglePolling}
+          labels={{ play: "Resume updates", pause: "Pause updates" }}
           className="absolute top-4 right-4"
         />
 
