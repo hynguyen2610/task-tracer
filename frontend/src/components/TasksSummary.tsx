@@ -28,7 +28,9 @@ export default function TasksSummary({ tasks }: TasksSummaryProps) {
           <Mail className="h-6 w-6" />
         </button>
         <button
-          onClick={() => exportToExcel(tasks)}
+          onClick={() =>
+            exportToExcel(tasks).catch((err) => alert(`Export failed: ${err}`))
+          }
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center"
         >
           <span className="sr-only">Export to Excel</span>

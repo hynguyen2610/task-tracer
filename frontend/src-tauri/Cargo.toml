@@ -1,0 +1,21 @@
+[package]
+name = "task-tracker"
+version = "1.0.0"
+description = "Single-user task time tracker"
+edition = "2021"
+
+[lib]
+# The `_lib` suffix avoids a name clash with the binary on Windows.
+name = "task_tracker_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# "bundled" compiles SQLite into the app, so no DLL has to be shipped.
+rusqlite = { version = "0.41", features = ["bundled"] }
