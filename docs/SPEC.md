@@ -16,7 +16,7 @@ in `frontend/`):
 
 - **UI:** shown in the system webview (WebView2 on Windows).
 - **Core:** Rust (`frontend/src-tauri/`). The task rules run as Tauri commands
-  that the UI calls with `invoke` (9.1); there is no HTTP server or port.
+  that the UI calls with `invoke` (10.1); there is no HTTP server or port.
 - **Data:** SQLite (compiled into the app), in `tasks.db` in the app data
   folder: `%APPDATA%\com.hy.tasktracker\` on Windows. Every command runs in a
   transaction.
@@ -26,7 +26,7 @@ in `frontend/`):
 
 - **UI:** served by Vite on `http://localhost:1420`.
 - **Backend:** Express + SQLite via `better-sqlite3` (`backend/`), called over
-  HTTP (9.2). Data in `backend/tasks.db`.
+  HTTP (10.2). Data in `backend/tasks.db`.
 
 Both apply the same rules to the same schema, so a `tasks.db` from one can be
 copied to the other. Missing columns are added when it is opened (4.6).
@@ -151,8 +151,6 @@ fills it in:
   being lost), and sets `lastWorkedAt` to now. Nothing is counted in memory, so
   time keeps adding up while the app or browser is closed.
 - **The UI reads the tasks every second** to show the time going up.
-- **The pause button in the top right only pauses polling.** It stops the
-  screen from updating; it does not stop the running task's timer.
 - **Editing pauses the task.** Opening the edit form on a running task pauses
   it first, so the form shows the up-to-date time and nothing is counted while
   editing. Saving doesn't restart the timer; press play to resume.
@@ -180,6 +178,23 @@ decimals) don't change with the switch.
 Tasks are shown by `position`, whatever their status: `Pending`, `Done` and
 `Canceled` tasks keep their place in the main list. New tasks go to the bottom.
 Dragging a task saves the new order for the whole list right away.
+
+### 6.1 Adding a task
+
+- **Suggestions:** from the second character typed, the title field lists up
+  to 6 existing tasks with a similar title, each with its status and start
+  date. Best first: same title, title starting with what was typed, title
+  containing it, then titles a few typos away (1 edit per 5 characters, at
+  least 1). Case and extra spaces are ignored, and each title is listed once
+  (the task started earliest). Arrow keys move through the list, Enter or a
+  click picks one, Escape closes it.
+- **Reusing a start date:** when the title matches an existing task exactly
+  (ignoring case and spaces) and that task has a start date, a checkbox under
+  the field offers to give the new task the same start date. If several tasks
+  match, the earliest start date is offered. Picking a suggestion ticks the
+  box; typing the title by hand leaves it unticked. The new task is still
+  `Todo`.
+- Only tasks in the list are matched; deleted tasks aren't suggested.
 
 ## 7. Totals and export
 
@@ -252,13 +267,68 @@ webview's or the browser's) and come back filled in next time.
 (lists and highlights survive pasting into email) and plain text, for places
 that only accept text.
 
-## 9. Backend interface
+## 9. Statistics
 
-The UI goes through `frontend/src/api/tasks.ts`, which uses 9.1 in the desktop
-app and 9.2 in a browser. Either way, a failed call rejects with the error
-message.
+The **Statistics** button (chart icon, top right of the main screen) opens a
+separate screen; the arrow at its top left goes back. It shows one day at a
+time, today by default.
 
-### 9.1 Tauri commands
+### 9.1 Work history
+
+Both backends record, in the same database:
+
+- **Work sessions:** one row per stretch of the timer running on one task,
+  from start to stop. Every way a timer stops ends its session: pause,
+  starting another task, opening the edit form, a status change that stops it
+  (4.4), and deleting the task. A session still running has no end yet.
+- **Task events:** a status change (any status, including the automatic
+  `Todo` → `In progress` on start), or an **adjustment**: a total time typed in
+  the edit form, stored as the total before and after.
+
+Each row keeps the task's id and its title at that moment, and nothing is
+removed when a task is deleted, so its history stays in the statistics. History
+starts when this version is first run; earlier days have none.
+
+### 9.2 The day
+
+All times are local. A session that crosses midnight is split there.
+
+| Figure        | Meaning                                                          |
+|---------------|------------------------------------------------------------------|
+| **Work**      | Tracked time plus that day's adjustments, never below 0. Tracked time is the sessions' time, plus gaps between sessions shorter than 2 minutes. |
+| **Break**     | Gaps of 2 minutes or more between one session's end and the next one's start. Time before the first start and after the last stop doesn't count. |
+| **Day span**  | First start to last stop (or now, if a session is running).      |
+| **Adjustments** | Sum of that day's adjustments (after − before), signed.        |
+
+- **Timeline bar:** from the hour before the first start to the hour after
+  the last stop. One bar per session, coloured by task (the first 8 tasks of
+  the day get their own colour, the rest share grey). Hovering a bar shows
+  the task, its times and its length.
+- **By task:** each task worked on that day with tracked time, adjustments
+  and total, largest first. Deleted tasks are marked "(deleted)" and keep
+  their last known title; other tasks show their current title.
+- **Timeline list:** in time order, "Started", "Paused … after", "Break of …,
+  until …", status changes ("… → Done") and adjustments ("Adjusted … by
+  +00:15:00 (01:25:00 → 01:40:00)"). At the same minute, a stop comes first,
+  then the status change that caused it, then the break, then the next start.
+- Durations follow the time format switch (5.1) and are rounded down to whole
+  seconds, like the timer. While today is shown, the screen re-reads the
+  history every 5 seconds.
+
+### 9.3 Calendar
+
+A month grid, weeks starting on Monday, next to the day (above it on narrow
+screens). Days with tracked work or an adjustment have a dot; today is
+outlined; the chosen day is filled. Days after today, and months after this
+one, can't be picked.
+
+## 10. Backend interface
+
+The UI goes through `frontend/src/api/tasks.ts`, which uses 10.1 in the
+desktop app and 10.2 in a browser. Either way, a failed call rejects with the
+error message.
+
+### 10.1 Tauri commands
 
 Rust commands in `frontend/src-tauri/src/lib.rs`. Arguments are camelCase in
 TypeScript.
@@ -266,14 +336,15 @@ TypeScript.
 | Command         | Arguments                                   | Returns / errors            |
 |-----------------|---------------------------------------------|-----------------------------|
 | `get_tasks`     | none                                        | All tasks, by `position`.   |
-| `create_task`   | `{ title, priority? }`                      | The created task, as `Todo` (priority defaults to `Normal`). |
+| `create_task`   | `{ title, priority?, startedAt? }`          | The created task, as `Todo` (priority defaults to `Normal`). `startedAt` reuses an earlier start date (6.1); fails with "startedAt must be a date (epoch ms)" if negative. |
 | `update_task`   | `{ id, changes: { title?, totalSeconds?, priority?, status?, statusNote?, startedAt? } }`; fields left out or `null` keep their value, an empty `statusNote` clears it | Nothing. Fails with "status must be one of: …", "startedAt must be a date (epoch ms)" for a negative `startedAt`, or "Task not found". Applies 4.4. |
 | `toggle_task`   | `{ id }`                                    | All tasks, by `position`. Fails with "Task not found", or "Cannot start a `<status>` task" for `Pending`, `Done` and `Canceled`. Applies 4.3. |
 | `reorder_tasks` | `{ ids }`, the full new order               | Nothing.                    |
 | `delete_task`   | `{ id }`                                    | Nothing.                    |
 | `save_file`     | `{ defaultName, contents }` (bytes)         | Shows a save dialog and writes the file. The chosen path, or `null` if cancelled. |
+| `get_activity`  | `{ from, to }` (epoch ms)                   | `{ sessions, events }` (9.1): sessions that overlap `[from, to)` and events inside it, oldest first. |
 
-### 9.2 HTTP API
+### 10.2 HTTP API
 
 Express backend in `backend/src/index.ts`, at `VITE_API_URL` (default
 `http://localhost:4000`). All bodies are JSON. The backend reads `PORT`
@@ -282,27 +353,37 @@ Express backend in `backend/src/index.ts`, at `VITE_API_URL` (default
 | Method & path             | Body                                    | Response                    |
 |---------------------------|-----------------------------------------|-----------------------------|
 | `GET /tasks`              | none                                    | All tasks, by `position`.   |
-| `POST /tasks`             | `{ title, priority }`                   | The created task, as `Todo`. |
+| `POST /tasks`             | `{ title, priority, startedAt? }`       | The created task, as `Todo`. `400` if `startedAt` isn't a whole number ≥ 0. |
 | `PUT /tasks/:id`          | Same as `update_task`'s `changes`       | `{ success: true }`. `400` if `status` isn't one of the five or `startedAt` isn't a whole number ≥ 0, `404` if not found. Applies 4.4. |
 | `POST /tasks/:id/toggle`  | none                                    | All tasks, by `position`. `404` if not found; `409` when starting a `Pending`, `Done` or `Canceled` task. Applies 4.3. |
 | `POST /tasks/reorder`     | `{ ids: number[] }`, the full new order | `{ success: true }`. `400` if `ids` isn't an array. |
 | `DELETE /tasks/:id`       | none                                    | `{ success: true }`         |
+| `GET /activity?from&to`   | none; `from`, `to` in epoch ms          | Same as `get_activity`. `400` if either isn't a whole number. |
 
 The browser has no save dialog; exports are downloaded instead of using
 `save_file`.
 
-## 10. Tests
+## 11. Tests
 
 - **Rust core:** `cargo test` in `frontend/src-tauri/`.
+- **Unit tests:** `npm test` in `frontend/` runs Vitest on `src/**/*.test.ts`
+  (day statistics and title matching).
 - **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
   tests in `frontend/e2e/` in Chromium. They start their own backend (port
   4100, a fresh database in the temp folder) and Vite (port 1430), so a
   running dev setup and `backend/tasks.db` are not touched.
 
-## 11. Decisions
+## 12. Decisions
 
 - `Pending`, `Done` and `Canceled` tasks stay in the main list, in their position.
 - The Excel export has a Status column and includes `Canceled` tasks.
 - Total Time includes `Canceled` tasks.
 - `Pending` tasks can't be started; set them back to `In progress` first.
 - The report's ETA is tracked time, not an estimate.
+- Deleted tasks keep their history in the statistics.
+- A total time typed by hand is recorded as an adjustment and counts toward
+  that day's work.
+- Gaps under 2 minutes between sessions count as work, not breaks.
+- Similar titles are offered as suggestions while typing; the user decides.
+- The Statistics button replaced the old global pause button, which only
+  paused screen updates.

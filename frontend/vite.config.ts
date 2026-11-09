@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -14,5 +15,9 @@ export default defineConfig({
     watch: {
       ignored: ['**/src-tauri/**'],
     },
+  },
+  // Unit tests only; the Playwright tests in e2e/ run with `npm run test:e2e`.
+  test: {
+    include: ['src/**/*.test.ts'],
   },
 })

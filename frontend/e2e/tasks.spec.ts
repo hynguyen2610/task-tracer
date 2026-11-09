@@ -20,6 +20,19 @@ async function addTask(page: Page, title: string, priority = "Normal") {
   return page.locator(`[data-testid="task"][data-rfd-draggable-id="${id}"]`);
 }
 
+/** All rows whose title contains `title` (case-insensitive), in list order. */
+const taskRowsWithTitle = (page: Page, title: string) =>
+  page.getByTestId("task").filter({ hasText: title });
+
+/** Opens the edit form, types a total time and saves. */
+async function setTimeByEdit(row: ReturnType<Page["locator"]>, value: string) {
+  await row.getByRole("button", { name: "Edit task" }).click();
+  const field = row.getByPlaceholder("HH:mm");
+  await field.fill(value);
+  await field.press("Enter");
+  await expect(row.getByRole("button", { name: "Edit task" })).toBeVisible();
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Task Tracker" })).toBeVisible();
@@ -268,6 +281,126 @@ test.describe("start date", () => {
 
     await page.getByRole("button", { name: "Daily report" }).click();
     await expect(page.getByRole("dialog")).toContainText(`Start date : ${shortDate(picked)}`);
+  });
+});
+
+test.describe("statistics", () => {
+  const openStats = async (page: Page) => {
+    await page.getByRole("button", { name: "Statistics" }).click();
+    await expect(page.getByRole("heading", { name: "Statistics" })).toBeVisible();
+  };
+  const entries = (page: Page) => page.getByTestId("timeline-entry");
+
+  test("opens from the main screen and goes back", async ({ page }) => {
+    await openStats(page);
+    await page.getByRole("button", { name: "Back to tasks" }).click();
+    await expect(page.getByRole("heading", { name: "Task Tracker" })).toBeVisible();
+  });
+
+  test("shows today's sessions, status changes and time adjustments", async ({ page }) => {
+    const title = uniqueTitle("Tracked");
+    const row = await addTask(page, title);
+    await row.getByRole("button", { name: "Start" }).click();
+    await expect(row).toContainText(/Total Time: 00:00:0[1-9]/, { timeout: 10_000 });
+    await row.getByRole("button", { name: "Pause" }).click();
+    await setTimeByEdit(row, "01:30");
+    await row.locator("select").selectOption("Done");
+    await expect(row.getByRole("button", { name: "Start" })).toBeDisabled();
+
+    await openStats(page);
+    await expect(entries(page).filter({ hasText: `Started ${title}` })).toHaveCount(1);
+    await expect(entries(page).filter({ hasText: `Paused ${title} after` })).toHaveCount(1);
+    await expect(entries(page).filter({ hasText: `${title} → In progress` })).toHaveCount(1);
+    await expect(entries(page).filter({ hasText: `${title} → Done` })).toHaveCount(1);
+    await expect(entries(page).filter({ hasText: new RegExp(`Adjusted ${title} by \\+01:29:5\\d`) })).toHaveCount(1);
+    await expect(page.getByTestId("timeline-segment").first()).toBeVisible();
+
+    // The per-task table counts tracked time plus the adjustment.
+    const taskRowInTable = page.getByRole("row").filter({ hasText: title });
+    await expect(taskRowInTable).toContainText("01:30:00");
+  });
+
+  test("keeps the history of a deleted task", async ({ page }) => {
+    const title = uniqueTitle("Deleted later");
+    const row = await addTask(page, title);
+    await row.getByRole("button", { name: "Start" }).click();
+    await expect(row.getByRole("button", { name: "Pause" })).toBeVisible();
+    await row.getByRole("button", { name: "Delete task" }).click();
+    await expect(taskRow(page, title)).toHaveCount(0);
+
+    await openStats(page);
+    await expect(page.getByRole("row").filter({ hasText: title })).toContainText("(deleted)");
+  });
+
+  test("marks days with work in the calendar and shows an empty day", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Calendar"));
+    await row.getByRole("button", { name: "Start" }).click();
+    await row.getByRole("button", { name: "Pause" }).click();
+
+    await openStats(page);
+    const today = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const todayKey = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    await expect(page.locator(`[data-day="${todayKey}"]`)).toHaveAttribute("aria-label", /has tracked work/);
+    await expect(page.locator(`[data-day="${todayKey}"]`)).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Next month" })).toBeDisabled();
+
+    // Nothing was tracked last month in this fresh database.
+    await page.getByRole("button", { name: "Previous month" }).click();
+    await page.locator('[data-day$="-01"]').click();
+    await expect(page.getByText("No work tracked on this day.")).toBeVisible();
+  });
+});
+
+test.describe("existing task suggestions", () => {
+  const titleInput = (page: Page) => page.getByPlaceholder("New task title...");
+  const options = (page: Page) => page.getByRole("listbox", { name: "Existing tasks" }).getByRole("option");
+
+  test("suggests similar titles while typing and reuses the picked task's start date", async ({ page }) => {
+    const title = uniqueTitle("Quarterly invoice review");
+    const old = await addTask(page, title);
+    await old.locator("select").selectOption("Pending"); // gives it a start date
+    await expect(old).toContainText("Started:");
+    const started = (await old.innerText()).match(/Started: (\d\d \w+)/)![1];
+
+    await titleInput(page).fill(title.slice(0, 15)); // "Quarterly invoi"
+    await expect(options(page).filter({ hasText: title })).toContainText(`Pending · started ${started}`);
+    await options(page).filter({ hasText: title }).click();
+
+    await expect(titleInput(page)).toHaveValue(title);
+    const reuse = page.getByRole("checkbox", { name: /already exists/ });
+    await expect(reuse).toBeChecked();
+    await page.getByRole("button", { name: "➕ Add" }).click();
+
+    const rows = taskRowsWithTitle(page, title);
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(1)).toContainText(`Started: ${started}`);
+    await expect(rows.nth(1).locator("select")).toHaveValue("Todo");
+  });
+
+  test("asks before reusing the start date of an exact match typed by hand", async ({ page }) => {
+    const title = uniqueTitle("Weekly sync");
+    const old = await addTask(page, title);
+    await old.locator("select").selectOption("Done");
+
+    await titleInput(page).fill(title.toUpperCase());
+    const reuse = page.getByRole("checkbox", { name: /already exists/ });
+    await expect(reuse).not.toBeChecked();
+    await page.getByRole("button", { name: "➕ Add" }).click();
+    await expect(taskRowsWithTitle(page, title.toUpperCase()).last()).not.toContainText("Started:");
+  });
+
+  test("picks a suggestion with the keyboard", async ({ page }) => {
+    const title = uniqueTitle("Keyboard pick");
+    await addTask(page, title);
+    await titleInput(page).fill("Keyboard pi");
+    await titleInput(page).press("ArrowDown");
+    await expect(options(page).first()).toHaveAttribute("aria-selected", "true");
+    const picked = await options(page).first().locator("span").first().innerText();
+    await titleInput(page).press("Enter");
+    await expect(titleInput(page)).toHaveValue(picked);
+    await titleInput(page).press("Escape");
+    await expect(page.getByRole("listbox")).toHaveCount(0);
   });
 });
 

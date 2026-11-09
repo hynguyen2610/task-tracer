@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as api from "../api/tasks";
 import type { Priority, Status, Task, TaskChanges } from "../types";
 
@@ -7,36 +7,20 @@ const POLL_INTERVAL_MS = 1000;
 /** Task list state, kept fresh by polling the backend every second. */
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isPolling, setIsPolling] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchTasks = useCallback(async () => {
     setTasks(await api.getTasks());
   }, []);
 
-  const startPolling = useCallback(() => {
+  useEffect(() => {
     fetchTasks();
-    intervalRef.current = setInterval(fetchTasks, POLL_INTERVAL_MS);
-    setIsPolling(true);
+    const interval = setInterval(fetchTasks, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [fetchTasks]);
 
-  const stopPolling = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = null;
-    setIsPolling(false);
-  }, []);
-
-  const togglePolling = () => (isPolling ? stopPolling() : startPolling());
-
-  useEffect(() => {
-    startPolling();
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [startPolling]);
-
-  const addTask = async (title: string, priority: Priority) => {
-    await api.createTask(title, priority);
+  /** `startedAt` reuses the start date of an earlier task with the same title. */
+  const addTask = async (title: string, priority: Priority, startedAt?: number) => {
+    await api.createTask(title, priority, startedAt);
     fetchTasks();
   };
 
@@ -84,8 +68,6 @@ export function useTasks() {
 
   return {
     tasks,
-    isPolling,
-    togglePolling,
     addTask,
     toggleTask,
     pauseTask,
