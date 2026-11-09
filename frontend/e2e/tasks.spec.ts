@@ -143,6 +143,41 @@ test("exports tasks.xlsx as a download", async ({ page }) => {
   expect((await download).suggestedFilename()).toBe("tasks.xlsx");
 });
 
+test.describe("layout", () => {
+  const longTitle = (name: string) =>
+    uniqueTitle(`${name}: review the quarterly time tracking export and reconcile it with the`);
+
+  /** Number of text lines the title takes up. */
+  const titleLines = (row: ReturnType<Page["locator"]>) =>
+    row.locator("p").first().evaluate((el) => {
+      const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
+      return Math.round(el.getBoundingClientRect().height / lineHeight);
+    });
+
+  test("uses the width of a wide screen so a long title fits on one line", async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    const row = await addTask(page, longTitle("Wide"));
+    expect(await titleLines(row)).toBe(1);
+    // Time, priority and status share one line too.
+    const meta = row.locator("p").nth(1);
+    const status = row.locator("label");
+    expect((await meta.boundingBox())!.y).toBeCloseTo((await status.boundingBox())!.y, -1);
+  });
+
+  test("wraps a long title on a narrow screen without scrolling sideways", async ({ page }) => {
+    await page.setViewportSize({ width: 480, height: 900 });
+    const row = await addTask(page, longTitle("Narrow"));
+    expect(await titleLines(row)).toBeGreaterThan(1);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+    // The buttons stay inside the screen (the row may be below the fold).
+    const del = (await row.getByRole("button", { name: "Delete task" }).boundingBox())!;
+    expect(del.x + del.width).toBeLessThanOrEqual(480);
+  });
+});
+
 test("opens and closes the daily report", async ({ page }) => {
   const title = uniqueTitle("Reported");
   const row = await addTask(page, title);

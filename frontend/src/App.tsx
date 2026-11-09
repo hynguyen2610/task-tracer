@@ -21,7 +21,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-8">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 relative">
+      <div className="w-full max-w-7xl bg-white rounded-2xl shadow-xl p-6 relative">
         <PlayPauseButton
           isRunning={isPolling}
           onClick={togglePolling}

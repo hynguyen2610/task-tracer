@@ -113,7 +113,10 @@ and is only changed or cleared from the edit form.
   - `Pending`: amber.
   - `Done`: green, stronger than the `Normal` priority green.
   - `Todo` and `Canceled` keep the priority color.
-- Each task shows a Status dropdown under the priority, followed by the note
+- The page grows with the window up to 1280 px wide, so long titles stay on
+  one line where they fit; longer ones wrap. From 768 px up, total time,
+  priority and status sit on one line under the title; below that they stack.
+- Each task shows a Status dropdown after the priority, followed by the note
   in brackets when there is one. Picking a value saves it right away, with the
   rules in 4.4; no need to open the edit form.
 - The edit form has a Status dropdown and a Status note field, after Priority.

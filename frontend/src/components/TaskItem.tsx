@@ -84,7 +84,7 @@ export default function TaskItem({
             STATUS_COLORS[task.status] ?? PRIORITY_COLORS[task.priority]
           } ${task.isRunning ? "glow border-blue-500" : ""}`}
         >
-          <div className="flex items-center flex-1">
+          <div className="flex items-center flex-1 min-w-0 mr-2">
             <div className="flex-shrink-0 mr-4">
               <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
                 {index + 1}
@@ -94,32 +94,36 @@ export default function TaskItem({
             {isEditing ? (
               <TaskEditForm draft={draft} onChange={setDraft} onSave={save} />
             ) : (
-              <div>
-                <p className="font-medium text-gray-800">{task.title}</p>
-                <p className="text-gray-500 text-sm">
-                  <span className="font-medium">Total Time:</span>{" "}
-                  {formatTime(task.totalSeconds)}
-                </p>
-                <p className="text-gray-500 text-sm">
-                  <span className="font-medium">Priority:</span> {task.priority}
-                </p>
-                <label className="text-gray-500 text-sm">
-                  <span className="font-medium">Status:</span>{" "}
-                  <OptionSelect
-                    value={task.status}
-                    options={STATUSES}
-                    onChange={onStatusChange}
-                    className="border rounded px-1 py-0.5 bg-white/70 text-gray-700"
-                  />
-                  {task.statusNote && (
-                    <span className="ml-2 italic">({task.statusNote})</span>
-                  )}
-                </label>
+              <div className="min-w-0">
+                {/* Wraps only when the title is longer than the row. */}
+                <p className="font-medium text-gray-800 break-words">{task.title}</p>
+                {/* Stacked on narrow screens, one line on wider ones. */}
+                <div className="md:flex md:flex-wrap md:items-center md:gap-x-6">
+                  <p className="text-gray-500 text-sm">
+                    <span className="font-medium">Total Time:</span>{" "}
+                    {formatTime(task.totalSeconds)}
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    <span className="font-medium">Priority:</span> {task.priority}
+                  </p>
+                  <label className="block text-gray-500 text-sm">
+                    <span className="font-medium">Status:</span>{" "}
+                    <OptionSelect
+                      value={task.status}
+                      options={STATUSES}
+                      onChange={onStatusChange}
+                      className="border rounded px-1 py-0.5 bg-white/70 text-gray-700"
+                    />
+                    {task.statusNote && (
+                      <span className="ml-2 italic">({task.statusNote})</span>
+                    )}
+                  </label>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-shrink-0 items-center space-x-2">
             <PlayPauseButton
               isRunning={task.isRunning}
               onClick={onToggle}
