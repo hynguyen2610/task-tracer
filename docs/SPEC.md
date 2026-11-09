@@ -8,16 +8,35 @@ A single-user time tracker. You keep an ordered list of tasks, start and pause
 a timer on one task at a time, export the time spent to Excel, and copy a
 daily work report into an email.
 
-- **Frontend:** React + Vite (`frontend/`), talks to the backend over HTTP.
-- **Backend:** Express + SQLite via `better-sqlite3` (`backend/`), data in
-  `backend/tasks.db`.
+The same UI (React + Vite, `frontend/src/`) runs in two ways.
+`frontend/src/api/tasks.ts` picks the right one at runtime with `isTauri()`.
+
+**Desktop app**, built with [Tauri](https://tauri.app) v2 (`npm run tauri dev`
+in `frontend/`):
+
+- **UI:** shown in the system webview (WebView2 on Windows).
+- **Core:** Rust (`frontend/src-tauri/`). The task rules run as Tauri commands
+  that the UI calls with `invoke` (9.1); there is no HTTP server or port.
+- **Data:** SQLite (compiled into the app), in `tasks.db` in the app data
+  folder: `%APPDATA%\com.hy.tasktracker\` on Windows. Every command runs in a
+  transaction.
+
+**Browser version** (`npm run dev` in `backend/` and in `frontend/`, or
+`start-windows.bat`):
+
+- **UI:** served by Vite on `http://localhost:1420`.
+- **Backend:** Express + SQLite via `better-sqlite3` (`backend/`), called over
+  HTTP (9.2). Data in `backend/tasks.db`.
+
+Both apply the same rules to the same schema, so a `tasks.db` from one can be
+copied to the other. Missing columns are added when it is opened (4.6).
 
 ## 2. Task
 
 | Field          | Type                 | Notes                                                        |
 |----------------|----------------------|--------------------------------------------------------------|
 | `id`           | integer              | Assigned by the database.                                    |
-| `title`        | string               | Required. The add form ignores blank titles; the backend and the edit form don't check. |
+| `title`        | string               | Required. The add form ignores blank titles; the backends and the edit form don't check. |
 | `totalSeconds` | integer              | Time tracked so far. Default `0`.                            |
 | `isRunning`    | boolean              | `true` while the timer is running. Default `false`.          |
 | `lastStart`    | epoch ms or `null`   | When the timer last started or was last brought up to date.  |
@@ -65,7 +84,7 @@ priority.
 |------------------------------------------|--------------------------|----------------------------------------------------------------|
 | Start timer                              | `Todo`                   | Timer starts, status becomes `In progress`.                    |
 | Start timer                              | `In progress`            | Timer starts, status unchanged.                                |
-| Start timer                              | `Pending`, `Done` or `Canceled` | Rejected. Backend returns `409`; the play button is disabled. |
+| Start timer                              | `Pending`, `Done` or `Canceled` | Rejected (`toggle_task` fails, HTTP `409`); the play button is disabled. |
 | Pause timer                              | `In progress`            | Timer stops, status stays `In progress`.                       |
 | Start another task while this one runs   | `In progress`            | This task's timer stops (time added), status stays `In progress`. |
 | Open the edit form while this one runs   | `In progress`            | Timer stops (time added) before the form opens, status stays `In progress`. See 5. |
@@ -102,7 +121,8 @@ and is only changed or cleared from the edit form.
 
 ### 4.6 Existing data
 
-When the backend starts, it adds any missing column and fills it in:
+When the app or the Express backend starts, it adds any missing column and
+fills it in:
 
 | Column         | Filled with                                                    |
 |----------------|----------------------------------------------------------------|
@@ -115,12 +135,13 @@ When the backend starts, it adds any missing column and fills it in:
 
 - **At most one task runs at a time.** Starting a task stops whichever task is
   running.
-- **The backend keeps the time.** On every read and every toggle it adds
-  `now - lastStart` to `totalSeconds` for the running task and resets
-  `lastStart` (and `lastWorkedAt`) to `now`. Nothing is counted in memory, so
-  time keeps adding up while the browser is closed and survives a backend
-  restart.
-- **The frontend polls `GET /tasks` every second** to show the time going up.
+- **The backend keeps the time** (the Rust core, or Express in the browser
+  version). On every read, toggle and status change it adds the whole seconds
+  elapsed since `lastStart` to `totalSeconds`, moves `lastStart` forward by
+  exactly those seconds (so the leftover fraction counts next time instead of
+  being lost), and sets `lastWorkedAt` to now. Nothing is counted in memory, so
+  time keeps adding up while the app or browser is closed.
+- **The UI reads the tasks every second** to show the time going up.
 - **The pause button in the top right only pauses polling.** It stops the
   screen from updating; it does not stop the running task's timer.
 - **Editing pauses the task.** Opening the edit form on a running task pauses
@@ -140,9 +161,10 @@ Dragging a task saves the new order for the whole list right away.
 - **Total Time (All Tasks)** is the sum of `totalSeconds` for every task in
   the list, whatever its status (`Done` and `Canceled` included), shown as
   `HH:mm:ss`.
-- **Export to Excel** downloads `tasks.xlsx` with one sheet, "Tasks", and
-  three columns: Total Time (hours, 2 decimals), Title and Status. Every task
-  is exported, in list order.
+- **Export to Excel** writes `tasks.xlsx` with one sheet, "Tasks", and three
+  columns: Total Time (hours, 2 decimals), Title and Status. Every task is
+  exported, in list order. The desktop app asks where to save (cancelling
+  writes nothing); the browser downloads the file.
 
 ## 8. Daily report
 
@@ -193,9 +215,11 @@ are left out.
 The dialog has fields for greeting, intro, next planned tasks, issues and
 signature, with a live preview. Above them it shows **Total ETA (rounded)**:
 the sum of the report's rounded ETAs, so it matches what a reader adds up from
-the email. It is shown in the dialog only, not copied. Next planned tasks takes one item per line; a
-line starting with `-` becomes a sub-item of the line above. The fields are
-saved in the browser (`localStorage`) and come back filled in next time.
+the email. It is shown in the dialog only, not copied.
+
+Next planned tasks takes one item per line; a line starting with `-` becomes a
+sub-item of the line above. The fields are saved in `localStorage` (the
+webview's or the browser's) and come back filled in next time.
 
 ### 8.4 Copy
 
@@ -203,20 +227,54 @@ saved in the browser (`localStorage`) and come back filled in next time.
 (lists and highlights survive pasting into email) and plain text, for places
 that only accept text.
 
-## 9. API
+## 9. Backend interface
 
-Base URL `http://localhost:4000`. All bodies are JSON.
+The UI goes through `frontend/src/api/tasks.ts`, which uses 9.1 in the desktop
+app and 9.2 in a browser. Either way, a failed call rejects with the error
+message.
+
+### 9.1 Tauri commands
+
+Rust commands in `frontend/src-tauri/src/lib.rs`. Arguments are camelCase in
+TypeScript.
+
+| Command         | Arguments                                   | Returns / errors            |
+|-----------------|---------------------------------------------|-----------------------------|
+| `get_tasks`     | none                                        | All tasks, by `position`.   |
+| `create_task`   | `{ title, priority? }`                      | The created task, as `Todo` (priority defaults to `Normal`). |
+| `update_task`   | `{ id, changes: { title?, totalSeconds?, priority?, status?, statusNote? } }`; fields left out or `null` keep their value, an empty `statusNote` clears it | Nothing. Fails with "status must be one of: …" or "Task not found". Applies 4.4. |
+| `toggle_task`   | `{ id }`                                    | All tasks, by `position`. Fails with "Task not found", or "Cannot start a `<status>` task" for `Pending`, `Done` and `Canceled`. Applies 4.3. |
+| `reorder_tasks` | `{ ids }`, the full new order               | Nothing.                    |
+| `delete_task`   | `{ id }`                                    | Nothing.                    |
+| `save_file`     | `{ defaultName, contents }` (bytes)         | Shows a save dialog and writes the file. The chosen path, or `null` if cancelled. |
+
+### 9.2 HTTP API
+
+Express backend in `backend/src/index.ts`, at `VITE_API_URL` (default
+`http://localhost:4000`). All bodies are JSON. The backend reads `PORT`
+(default `4000`) and `TASKS_DB` (default `tasks.db`) from the environment.
 
 | Method & path             | Body                                    | Response                    |
 |---------------------------|-----------------------------------------|-----------------------------|
 | `GET /tasks`              | none                                    | All tasks, by `position`.   |
 | `POST /tasks`             | `{ title, priority }`                   | The created task, as `Todo`. |
-| `PUT /tasks/:id`          | `{ title?, totalSeconds?, priority?, status?, statusNote? }`; fields left out or `null` keep their value, an empty `statusNote` clears it | `{ success: true }`. `400` if `status` isn't one of the five, `404` if not found. Applies 4.4. |
+| `PUT /tasks/:id`          | Same as `update_task`'s `changes`       | `{ success: true }`. `400` if `status` isn't one of the five, `404` if not found. Applies 4.4. |
 | `POST /tasks/:id/toggle`  | none                                    | All tasks, by `position`. `404` if not found; `409` when starting a `Pending`, `Done` or `Canceled` task. Applies 4.3. |
 | `POST /tasks/reorder`     | `{ ids: number[] }`, the full new order | `{ success: true }`. `400` if `ids` isn't an array. |
 | `DELETE /tasks/:id`       | none                                    | `{ success: true }`         |
 
-## 10. Decisions
+The browser has no save dialog; exports are downloaded instead of using
+`save_file`.
+
+## 10. Tests
+
+- **Rust core:** `cargo test` in `frontend/src-tauri/`.
+- **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
+  tests in `frontend/e2e/` in Chromium. They start their own backend (port
+  4100, a fresh database in the temp folder) and Vite (port 1430), so a
+  running dev setup and `backend/tasks.db` are not touched.
+
+## 11. Decisions
 
 - `Pending`, `Done` and `Canceled` tasks stay in the main list, in their position.
 - The Excel export has a Status column and includes `Canceled` tasks.
