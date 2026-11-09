@@ -1,23 +1,30 @@
 import { useState } from "react";
 import { FileSpreadsheet, Mail } from "lucide-react";
 import type { Task } from "../types";
-import { formatTime } from "../utils/time";
+import { formatDuration, type TimeFormat } from "../utils/time";
 import { exportToExcel } from "../utils/exportToExcel";
+import { useTimeFormat } from "../hooks/useTimeFormat";
 import ReportDialog from "./ReportDialog";
+import TimeFormatToggle from "./TimeFormatToggle";
 
 interface TasksSummaryProps {
   tasks: Task[];
+  onTimeFormatChange: (format: TimeFormat) => void;
 }
 
-export default function TasksSummary({ tasks }: TasksSummaryProps) {
+export default function TasksSummary({ tasks, onTimeFormatChange }: TasksSummaryProps) {
   const [reportOpen, setReportOpen] = useState(false);
+  const timeFormat = useTimeFormat();
   const totalSeconds = tasks.reduce((sum, t) => sum + t.totalSeconds, 0);
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-end space-x-2">
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <div className="mr-auto">
+          <TimeFormatToggle value={timeFormat} onChange={onTimeFormatChange} />
+        </div>
         <p className="text-right text-gray-700 font-medium">
-          Total Time (All Tasks): {formatTime(totalSeconds)}
+          Total Time (All Tasks): {formatDuration(totalSeconds, timeFormat)}
         </p>
         <button
           onClick={() => setReportOpen(true)}

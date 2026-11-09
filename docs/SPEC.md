@@ -150,8 +150,24 @@ fills it in:
 - **Editing pauses the task.** Opening the edit form on a running task pauses
   it first, so the form shows the up-to-date time and nothing is counted while
   editing. Saving doesn't restart the timer; press play to resume.
-- **Editing time:** the edit form takes `HH:mm`. Saving sets `totalSeconds` to
-  that value, which drops any seconds.
+- **Editing time:** the edit form takes the time in the chosen format (5.1).
+  Saving sets `totalSeconds` to that value, which drops any seconds (`HH:mm`)
+  or rounds to the second (decimal). If the time field wasn't changed, saving
+  leaves `totalSeconds` as it is, seconds included.
+
+### 5.1 Time format
+
+A switch above the list, **hh:mm** / **Decimal**, picks how times are shown
+and typed. Default `hh:mm`. The choice is saved in `localStorage` and comes
+back next time.
+
+| Where                        | hh:mm      | Decimal                      |
+|------------------------------|------------|------------------------------|
+| Task's Total Time, Total Time (All Tasks) | `01:30:00` (seconds kept, so a running timer visibly ticks) | `1.5 h` (hours, at most 2 decimals) |
+| Edit form's Total Time field | `01:30`    | `1.5`; a comma works as the decimal point |
+
+The daily report (ETA in quarter hours) and the Excel export (hours, 2
+decimals) don't change with the switch.
 
 ## 6. List order
 
@@ -162,8 +178,8 @@ Dragging a task saves the new order for the whole list right away.
 ## 7. Totals and export
 
 - **Total Time (All Tasks)** is the sum of `totalSeconds` for every task in
-  the list, whatever its status (`Done` and `Canceled` included), shown as
-  `HH:mm:ss`.
+  the list, whatever its status (`Done` and `Canceled` included), shown in the
+  chosen time format (5.1).
 - **Export to Excel** writes `tasks.xlsx` with one sheet, "Tasks", and three
   columns: Total Time (hours, 2 decimals), Title and Status. Every task is
   exported, in list order. The desktop app asks where to save (cancelling

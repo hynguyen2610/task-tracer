@@ -1,13 +1,15 @@
 import { PRIORITIES } from "../constants/priority";
 import { STATUSES } from "../constants/status";
 import type { Priority, Status } from "../types";
+import { useTimeFormat } from "../hooks/useTimeFormat";
 import DurationInput from "./DurationInput";
 import OptionSelect from "./OptionSelect";
 
 export interface TaskDraft {
   title: string;
-  /** "HH:mm" */
-  time: string;
+  totalSeconds: number;
+  /** Whether the time field was changed; if not, the saved time is left alone. */
+  timeEdited: boolean;
   priority: Priority;
   status: Status;
   statusNote: string;
@@ -26,6 +28,7 @@ export default function TaskEditForm({
   onChange,
   onSave,
 }: TaskEditFormProps) {
+  const timeFormat = useTimeFormat();
   return (
     <div className="space-y-2 flex-1">
       <label className={labelClass}>Title</label>
@@ -40,10 +43,14 @@ export default function TaskEditForm({
         className="border rounded-lg px-2 py-1 w-full"
       />
 
-      <label className={labelClass}>Total Time (HH:mm)</label>
+      <label className={labelClass}>
+        Total Time ({timeFormat === "decimal" ? "hours" : "HH:mm"})
+      </label>
       <DurationInput
-        value={draft.time}
-        onChange={(time) => onChange({ ...draft, time })}
+        // Remount on a format switch so the field shows the new format.
+        key={timeFormat}
+        value={draft.totalSeconds}
+        onChange={(totalSeconds) => onChange({ ...draft, totalSeconds, timeEdited: true })}
         onEnter={onSave}
         onBlur={onSave}
         className="border rounded-lg px-2 py-1"

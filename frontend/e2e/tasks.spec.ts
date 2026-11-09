@@ -143,6 +143,78 @@ test("exports tasks.xlsx as a download", async ({ page }) => {
   expect((await download).suggestedFilename()).toBe("tasks.xlsx");
 });
 
+test.describe("time format", () => {
+  const formatButton = (page: Page, name: "hh:mm" | "Decimal") =>
+    page.getByRole("group", { name: "Time format" }).getByRole("button", { name });
+
+  /** Types into the time field of an open edit form and saves. */
+  async function setTimeInOpenForm(row: ReturnType<Page["locator"]>, value: string) {
+    const field = row.locator("input").nth(1);
+    await field.fill(value);
+    await field.press("Enter");
+  }
+
+  async function setTime(row: ReturnType<Page["locator"]>, value: string) {
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await setTimeInOpenForm(row, value);
+  }
+
+  test("starts as hh:mm and switches to decimal hours, and back", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Format"));
+    await setTime(row, "01:30");
+    await expect(formatButton(page, "hh:mm")).toHaveAttribute("aria-pressed", "true");
+    await expect(row).toContainText("Total Time: 01:30:00");
+
+    await formatButton(page, "Decimal").click();
+    await expect(formatButton(page, "Decimal")).toHaveAttribute("aria-pressed", "true");
+    await expect(row).toContainText("Total Time: 1.5 h");
+    await expect(page.getByText(/Total Time \(All Tasks\): [\d.]+ h/)).toBeVisible();
+
+    await formatButton(page, "hh:mm").click();
+    await expect(row).toContainText("Total Time: 01:30:00");
+  });
+
+  test("remembers the choice after a reload", async ({ page }) => {
+    await formatButton(page, "Decimal").click();
+    await page.reload();
+    await expect(formatButton(page, "Decimal")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("takes decimal hours in the edit form", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Decimal input"));
+    await formatButton(page, "Decimal").click();
+
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await expect(row.getByPlaceholder("Hours, e.g. 1.5")).toHaveValue("0");
+    await setTimeInOpenForm(row, "2.25");
+    await expect(row).toContainText("Total Time: 2.25 h");
+
+    // A comma works as the decimal point too.
+    await setTime(row, "1,5");
+    await expect(row).toContainText("Total Time: 1.5 h");
+
+    await formatButton(page, "hh:mm").click();
+    await expect(row).toContainText("Total Time: 01:30:00");
+  });
+
+  test("saving the form without touching the time keeps its seconds", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Keep seconds"));
+    await row.getByRole("button", { name: "Start" }).click();
+    await expect(row).toContainText(/Total Time: 00:00:0[2-9]/, { timeout: 10_000 });
+
+    // Opening the form pauses the task; the time it shows is final.
+    await row.getByRole("button", { name: "Edit task" }).click();
+    const title = row.locator("input").first();
+    await title.fill(uniqueTitle("Renamed"));
+    await title.press("Enter");
+
+    const text = await row.innerText();
+    expect(text).toMatch(/Total Time: 00:00:0[2-9]/);
+    await page.waitForTimeout(1_500);
+    await expect(row).toContainText(text.match(/Total Time: \S+/)![0]);
+  });
+});
+
 test.describe("layout", () => {
   const longTitle = (name: string) =>
     uniqueTitle(`${name}: review the quarterly time tracking export and reconcile it with the`);

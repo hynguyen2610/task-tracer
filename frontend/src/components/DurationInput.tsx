@@ -1,46 +1,48 @@
-import { useState } from "react"
+import { useState } from "react";
+import { useTimeFormat } from "../hooks/useTimeFormat";
+import {
+  durationToInput,
+  inputToDuration,
+  sanitizeDurationInput,
+} from "../utils/time";
 
 interface DurationInputProps {
-  value: string
-  onChange: (val: string) => void
-  onEnter?: () => void
-  onBlur?: () => void
-  className?: string
+  /** Duration in seconds. */
+  value: number;
+  onChange: (seconds: number) => void;
+  onEnter?: () => void;
+  onBlur?: () => void;
+  className?: string;
 }
 
+/** Duration field in the chosen time format: "01:30" or "1.5" (hours). */
 export default function DurationInput({ value, onChange, onEnter, onBlur, className }: DurationInputProps) {
-  const [internal, setInternal] = useState(value)
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[^0-9:]/g, "")
-    setInternal(val)
-    onChange(val)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && onEnter) onEnter()
-  }
+  const format = useTimeFormat();
+  const [text, setText] = useState(() => durationToInput(value, format));
 
   const handleBlur = () => {
-    const [hRaw, mRaw] = internal.split(":")
-    const h = String(Number(hRaw) || 0).padStart(2, "0")
-    const m = String(Math.min(Number(mRaw) || 0, 59)).padStart(2, "0")
-    const normalized = `${h}:${m}`
-    setInternal(normalized)
-    onChange(normalized)
-    if (onBlur) onBlur()
-  }
+    // Tidy what was typed: "1:5" -> "01:05", "1,50" -> "1.5".
+    const seconds = inputToDuration(text, format);
+    setText(durationToInput(seconds, format));
+    onBlur?.();
+  };
 
   return (
     <input
       type="text"
-      inputMode="numeric"
-      placeholder="HH:mm"
-      value={internal}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
+      inputMode="decimal"
+      placeholder={format === "decimal" ? "Hours, e.g. 1.5" : "HH:mm"}
+      value={text}
+      onChange={(e) => {
+        const next = sanitizeDurationInput(e.target.value, format);
+        setText(next);
+        onChange(inputToDuration(next, format));
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onEnter?.();
+      }}
       onBlur={handleBlur}
       className={className}
     />
-  )
+  );
 }

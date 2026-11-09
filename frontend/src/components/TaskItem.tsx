@@ -9,7 +9,8 @@ import {
   canStart,
 } from "../constants/status";
 import type { Status, Task, TaskChanges } from "../types";
-import { formatTime, hhmmToSeconds, secondsToHHmm } from "../utils/time";
+import { formatDuration } from "../utils/time";
+import { useTimeFormat } from "../hooks/useTimeFormat";
 import OptionSelect from "./OptionSelect";
 import PlayPauseButton from "./PlayPauseButton";
 import TaskEditForm, { type TaskDraft } from "./TaskEditForm";
@@ -28,7 +29,8 @@ interface TaskItemProps {
 
 const emptyDraft: TaskDraft = {
   title: "",
-  time: "",
+  totalSeconds: 0,
+  timeEdited: false,
   priority: DEFAULT_PRIORITY,
   status: DEFAULT_STATUS,
   statusNote: "",
@@ -46,6 +48,7 @@ export default function TaskItem({
   onDelete,
 }: TaskItemProps) {
   const [draft, setDraft] = useState<TaskDraft>(emptyDraft);
+  const timeFormat = useTimeFormat();
 
   const startEditing = async () => {
     // Pause a running task first, so the form shows its up-to-date time and
@@ -53,7 +56,8 @@ export default function TaskItem({
     const current = task.isRunning ? ((await onPause()) ?? task) : task;
     setDraft({
       title: current.title,
-      time: secondsToHHmm(current.totalSeconds),
+      totalSeconds: current.totalSeconds,
+      timeEdited: false,
       priority: current.priority,
       status: current.status,
       statusNote: current.statusNote ?? "",
@@ -64,7 +68,9 @@ export default function TaskItem({
   const save = async () => {
     await onSave({
       title: draft.title,
-      totalSeconds: hhmmToSeconds(draft.time),
+      // Only send the time if it was changed, so opening and saving the form
+      // doesn't round away seconds.
+      totalSeconds: draft.timeEdited ? draft.totalSeconds : undefined,
       priority: draft.priority,
       status: draft.status,
       statusNote: draft.statusNote,
@@ -101,7 +107,7 @@ export default function TaskItem({
                 <div className="md:flex md:flex-wrap md:items-center md:gap-x-6">
                   <p className="text-gray-500 text-sm">
                     <span className="font-medium">Total Time:</span>{" "}
-                    {formatTime(task.totalSeconds)}
+                    {formatDuration(task.totalSeconds, timeFormat)}
                   </p>
                   <p className="text-gray-500 text-sm">
                     <span className="font-medium">Priority:</span> {task.priority}

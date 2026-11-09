@@ -17,8 +17,7 @@ export interface Task {
   lastWorkedAt: number | null;
 }
 
-/** Fields the user can change from the edit form. */
-export type TaskChanges = Pick<
-  Task,
-  "title" | "totalSeconds" | "priority" | "status" | "statusNote"
+/** Fields the user can change from the edit form. Fields left out keep their value. */
+export type TaskChanges = Partial<
+  Pick<Task, "title" | "totalSeconds" | "priority" | "status" | "statusNote">
 >;
