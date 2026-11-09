@@ -10,6 +10,8 @@ import {
 } from "../constants/status";
 import type { Status, Task, TaskChanges } from "../types";
 import { formatDuration } from "../utils/time";
+import { fromDateInput, toDateInput } from "../utils/date";
+import { formatReportDate } from "../report/dailyReport";
 import { useTimeFormat } from "../hooks/useTimeFormat";
 import OptionSelect from "./OptionSelect";
 import PlayPauseButton from "./PlayPauseButton";
@@ -34,6 +36,8 @@ const emptyDraft: TaskDraft = {
   priority: DEFAULT_PRIORITY,
   status: DEFAULT_STATUS,
   statusNote: "",
+  startDate: "",
+  startDateEdited: false,
 };
 
 export default function TaskItem({
@@ -61,6 +65,8 @@ export default function TaskItem({
       priority: current.priority,
       status: current.status,
       statusNote: current.statusNote ?? "",
+      startDate: toDateInput(current.startedAt ? new Date(current.startedAt) : new Date()),
+      startDateEdited: false,
     });
     onStartEdit();
   };
@@ -74,6 +80,11 @@ export default function TaskItem({
       priority: draft.priority,
       status: draft.status,
       statusNote: draft.statusNote,
+      // Likewise only a picked date is sent: an unstarted task keeps no start
+      // date (today is just the picker's default) until it really starts.
+      startedAt: draft.startDateEdited
+        ? (fromDateInput(draft.startDate) ?? undefined)
+        : undefined,
     });
     setDraft(emptyDraft);
   };
@@ -112,6 +123,12 @@ export default function TaskItem({
                   <p className="text-gray-500 text-sm">
                     <span className="font-medium">Priority:</span> {task.priority}
                   </p>
+                  {task.startedAt && (
+                    <p className="text-gray-500 text-sm">
+                      <span className="font-medium">Started:</span>{" "}
+                      {formatReportDate(new Date(task.startedAt))}
+                    </p>
+                  )}
                   <label className="block text-gray-500 text-sm">
                     <span className="font-medium">Status:</span>{" "}
                     <OptionSelect

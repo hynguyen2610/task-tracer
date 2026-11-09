@@ -1,7 +1,9 @@
 import { PRIORITIES } from "../constants/priority";
 import { STATUSES } from "../constants/status";
 import type { Priority, Status } from "../types";
+import { useId } from "react";
 import { useTimeFormat } from "../hooks/useTimeFormat";
+import { toDateInput } from "../utils/date";
 import DurationInput from "./DurationInput";
 import OptionSelect from "./OptionSelect";
 
@@ -10,6 +12,10 @@ export interface TaskDraft {
   totalSeconds: number;
   /** Whether the time field was changed; if not, the saved time is left alone. */
   timeEdited: boolean;
+  /** "YYYY-MM-DD": the task's start date, or today if it hasn't started. */
+  startDate: string;
+  /** Whether a start date was picked; if not, the saved one is left alone. */
+  startDateEdited: boolean;
   priority: Priority;
   status: Status;
   statusNote: string;
@@ -29,6 +35,7 @@ export default function TaskEditForm({
   onSave,
 }: TaskEditFormProps) {
   const timeFormat = useTimeFormat();
+  const startDateId = useId();
   return (
     <div className="space-y-2 flex-1">
       <label className={labelClass}>Title</label>
@@ -82,6 +89,23 @@ export default function TaskEditForm({
           if (e.key === "Enter") onSave();
         }}
         className="border rounded-lg px-2 py-1 w-full"
+      />
+
+      <label htmlFor={startDateId} className={labelClass}>
+        Start date
+      </label>
+      <input
+        id={startDateId}
+        type="date"
+        value={draft.startDate}
+        max={toDateInput(new Date())}
+        onChange={(e) =>
+          onChange({ ...draft, startDate: e.target.value, startDateEdited: true })
+        }
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSave();
+        }}
+        className="border rounded-lg px-2 py-1"
       />
     </div>
   );

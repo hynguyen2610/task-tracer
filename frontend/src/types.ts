@@ -19,5 +19,5 @@ export interface Task {
 
 /** Fields the user can change from the edit form. Fields left out keep their value. */
 export type TaskChanges = Partial<
-  Pick<Task, "title" | "totalSeconds" | "priority" | "status" | "statusNote">
+  Pick<Task, "title" | "totalSeconds" | "priority" | "status" | "statusNote" | "startedAt">
 >;

@@ -44,7 +44,7 @@ copied to the other. Missing columns are added when it is opened (4.6).
 | `priority`     | [Priority](#3-priority) | Default `Normal`.                                         |
 | `status`       | [Status](#4-status)  | Default `Todo`.                                              |
 | `statusNote`   | string or `null`     | Optional short note shown after the status, e.g. "Waiting for Kiro". |
-| `startedAt`    | epoch ms or `null`   | Set once, the first time the task leaves `Todo` (timer start or status change). |
+| `startedAt`    | epoch ms or `null`   | Set once, the first time the task leaves `Todo` (timer start or status change), unless a start date was picked in the edit form (4.5), which always wins. |
 | `lastWorkedAt` | epoch ms or `null`   | Last time work was recorded: time tracked, total time edited, or status changed. Title, priority, note and order changes don't count. |
 
 A new database starts with one task, "First task of the day".
@@ -119,7 +119,13 @@ and is only changed or cleared from the edit form.
 - Each task shows a Status dropdown after the priority, followed by the note
   in brackets when there is one. Picking a value saves it right away, with the
   rules in 4.4; no need to open the edit form.
-- The edit form has a Status dropdown and a Status note field, after Priority.
+- The edit form has a Status dropdown and a Status note field, after Priority,
+  then a **Start date** picker. It shows the task's start date, or today if
+  it has none, and can't go past today. A picked date is saved as local
+  midnight of that day; picking one isn't work (`lastWorkedAt` and the status
+  stay as they are). If the picker isn't touched, nothing is saved, so a
+  `Todo` task still gets its start date when it really starts.
+- A task with a start date shows **Started: 06 Nov** after its priority.
 - The play button is disabled for `Pending`, `Done` and `Canceled` tasks.
 
 ### 4.6 Existing data
@@ -261,7 +267,7 @@ TypeScript.
 |-----------------|---------------------------------------------|-----------------------------|
 | `get_tasks`     | none                                        | All tasks, by `position`.   |
 | `create_task`   | `{ title, priority? }`                      | The created task, as `Todo` (priority defaults to `Normal`). |
-| `update_task`   | `{ id, changes: { title?, totalSeconds?, priority?, status?, statusNote? } }`; fields left out or `null` keep their value, an empty `statusNote` clears it | Nothing. Fails with "status must be one of: …" or "Task not found". Applies 4.4. |
+| `update_task`   | `{ id, changes: { title?, totalSeconds?, priority?, status?, statusNote?, startedAt? } }`; fields left out or `null` keep their value, an empty `statusNote` clears it | Nothing. Fails with "status must be one of: …", "startedAt must be a date (epoch ms)" for a negative `startedAt`, or "Task not found". Applies 4.4. |
 | `toggle_task`   | `{ id }`                                    | All tasks, by `position`. Fails with "Task not found", or "Cannot start a `<status>` task" for `Pending`, `Done` and `Canceled`. Applies 4.3. |
 | `reorder_tasks` | `{ ids }`, the full new order               | Nothing.                    |
 | `delete_task`   | `{ id }`                                    | Nothing.                    |
@@ -277,7 +283,7 @@ Express backend in `backend/src/index.ts`, at `VITE_API_URL` (default
 |---------------------------|-----------------------------------------|-----------------------------|
 | `GET /tasks`              | none                                    | All tasks, by `position`.   |
 | `POST /tasks`             | `{ title, priority }`                   | The created task, as `Todo`. |
-| `PUT /tasks/:id`          | Same as `update_task`'s `changes`       | `{ success: true }`. `400` if `status` isn't one of the five, `404` if not found. Applies 4.4. |
+| `PUT /tasks/:id`          | Same as `update_task`'s `changes`       | `{ success: true }`. `400` if `status` isn't one of the five or `startedAt` isn't a whole number ≥ 0, `404` if not found. Applies 4.4. |
 | `POST /tasks/:id/toggle`  | none                                    | All tasks, by `position`. `404` if not found; `409` when starting a `Pending`, `Done` or `Canceled` task. Applies 4.3. |
 | `POST /tasks/reorder`     | `{ ids: number[] }`, the full new order | `{ success: true }`. `400` if `ids` isn't an array. |
 | `DELETE /tasks/:id`       | none                                    | `{ success: true }`         |

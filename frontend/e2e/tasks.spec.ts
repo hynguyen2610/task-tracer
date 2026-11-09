@@ -207,11 +207,67 @@ test.describe("time format", () => {
     const title = row.locator("input").first();
     await title.fill(uniqueTitle("Renamed"));
     await title.press("Enter");
+    // Wait for the save to finish and the form to close.
+    await expect(row.getByRole("button", { name: "Edit task" })).toBeVisible();
 
     const text = await row.innerText();
     expect(text).toMatch(/Total Time: 00:00:0[2-9]/);
     await page.waitForTimeout(1_500);
     await expect(row).toContainText(text.match(/Total Time: \S+/)![0]);
+  });
+});
+
+test.describe("start date", () => {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dateInput = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const shortDate = (d: Date) =>
+    new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(d);
+  const daysAgo = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d;
+  };
+
+  test("defaults to today and isn't saved unless picked", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("No start"));
+    await expect(row).not.toContainText("Started:");
+
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await expect(row.getByLabel("Start date")).toHaveValue(dateInput(new Date()));
+    await expect(row.getByLabel("Start date")).toHaveAttribute("max", dateInput(new Date()));
+    await row.getByRole("button", { name: "Save task" }).click();
+
+    await expect(row.locator("select")).toHaveValue("Todo");
+    await expect(row).not.toContainText("Started:");
+  });
+
+  test("starting the timer sets it to today", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Started today"));
+    await row.getByRole("button", { name: "Start" }).click();
+    await expect(row).toContainText(`Started: ${shortDate(new Date())}`);
+    await row.getByRole("button", { name: "Pause" }).click();
+  });
+
+  test("can be picked, and is shown on the task and in the report", async ({ page }) => {
+    const title = uniqueTitle("Backdated");
+    const row = await addTask(page, title);
+    const picked = daysAgo(3);
+
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await row.getByLabel("Start date").fill(dateInput(picked));
+    await row.getByLabel("Start date").press("Enter");
+    await expect(row).toContainText(`Started: ${shortDate(picked)}`);
+
+    // It stays when the task moves on, and the form shows it next time.
+    await row.locator("select").selectOption("In progress");
+    await expect(row).toContainText(`Started: ${shortDate(picked)}`);
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await expect(row.getByLabel("Start date")).toHaveValue(dateInput(picked));
+    await row.getByRole("button", { name: "Save task" }).click();
+
+    await page.getByRole("button", { name: "Daily report" }).click();
+    await expect(page.getByRole("dialog")).toContainText(`Start date : ${shortDate(picked)}`);
   });
 });
 

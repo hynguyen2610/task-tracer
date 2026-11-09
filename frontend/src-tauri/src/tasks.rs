@@ -38,6 +38,8 @@ pub struct TaskUpdate {
     pub priority: Option<String>,
     pub status: Option<String>,
     pub status_note: Option<String>,
+    /// Start date picked by hand, as epoch ms.
+    pub started_at: Option<i64>,
 }
 
 fn now_ms() -> i64 {
@@ -155,6 +157,9 @@ pub fn update(conn: &Connection, id: i64, changes: &TaskUpdate) -> AppResult<()>
             )));
         }
     }
+    if changes.started_at.is_some_and(|ms| ms < 0) {
+        return Err(AppError::Invalid("startedAt must be a date (epoch ms)".into()));
+    }
     get(conn, id)?.ok_or(AppError::NotFound)?;
 
     // A running task must stay In progress, so any other status stops the
@@ -176,8 +181,10 @@ pub fn update(conn: &Connection, id: i64, changes: &TaskUpdate) -> AppResult<()>
 
     let now = now_ms();
     let worked = status != current.status || total_seconds != current.total_seconds;
-    let started_at = current
+    // A date picked by hand wins; otherwise it is set once, on leaving Todo.
+    let started_at = changes
         .started_at
+        .or(current.started_at)
         .or(if status != "Todo" { Some(now) } else { None });
     let last_worked_at = if worked { Some(now) } else { current.last_worked_at };
 
@@ -320,6 +327,25 @@ mod tests {
         update(&conn, 1, &set("Done")).unwrap();
         assert!(started > 0);
         assert_eq!(task(&conn, 1).started_at, Some(123));
+    }
+
+    #[test]
+    fn start_date_can_be_set_by_hand_and_survives_status_changes() {
+        let conn = setup();
+        let picked = TaskUpdate { started_at: Some(1_700_000_000_000), ..Default::default() };
+        update(&conn, 1, &picked).unwrap();
+        let t = task(&conn, 1);
+        assert_eq!(t.started_at, Some(1_700_000_000_000));
+        // Picking a date is not work, and doesn't move the task out of Todo.
+        assert!(t.last_worked_at.is_none());
+        assert_eq!(t.status, "Todo");
+
+        toggle(&conn, 1).unwrap();
+        update(&conn, 1, &set("Done")).unwrap();
+        assert_eq!(task(&conn, 1).started_at, Some(1_700_000_000_000));
+
+        let negative = TaskUpdate { started_at: Some(-1), ..Default::default() };
+        assert!(matches!(update(&conn, 1, &negative), Err(AppError::Invalid(_))));
     }
 
     #[test]

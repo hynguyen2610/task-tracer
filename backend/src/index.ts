@@ -81,9 +81,12 @@ app.post("/tasks/:id/toggle", (req, res) => {
 // clears the note.
 app.put("/tasks/:id", (req, res) => {
   const id = parseInt(req.params.id, 10)
-  const { title, totalSeconds, priority, status, statusNote } = req.body
+  const { title, totalSeconds, priority, status, statusNote, startedAt } = req.body
   if (status != null && !STATUSES.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${STATUSES.join(", ")}` })
+  }
+  if (startedAt != null && !(Number.isInteger(startedAt) && startedAt >= 0)) {
+    return res.status(400).json({ error: "startedAt must be a date (epoch ms)" })
   }
   const getTask = () => db.prepare("SELECT * FROM tasks WHERE id = ?").get(id) as Task | undefined
   if (!getTask()) return res.status(404).send("Task not found")
@@ -117,7 +120,8 @@ app.put("/tasks/:id", (req, res) => {
       next.priority,
       next.status,
       next.statusNote,
-      current.startedAt ?? (next.status !== "Todo" ? now : null),
+      // A date picked by hand wins; otherwise it is set once, on leaving Todo.
+      startedAt ?? current.startedAt ?? (next.status !== "Todo" ? now : null),
       worked ? now : current.lastWorkedAt,
       id
     )
