@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 
-const db = new Database("tasks.db");
+// TASKS_DB lets the end-to-end tests use a throwaway database.
+const db = new Database(process.env.TASKS_DB ?? "tasks.db");
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS tasks (
