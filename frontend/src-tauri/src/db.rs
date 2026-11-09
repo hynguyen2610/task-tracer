@@ -45,6 +45,8 @@ pub fn open(path: &Path) -> rusqlite::Result<Connection> {
         &["UPDATE tasks SET lastWorkedAt = lastStart WHERE lastStart IS NOT NULL"],
     )?;
 
+    conn.execute_batch(crate::activity::SCHEMA)?;
+
     // Very old rows had no position; number them in id order.
     let unpositioned: Vec<i64> = conn
         .prepare("SELECT id FROM tasks WHERE position IS NULL ORDER BY id")?

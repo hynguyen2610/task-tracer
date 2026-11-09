@@ -1,6 +1,7 @@
 import express from "express"
 import cors from "cors"
 import db from "./db/db"
+import * as activity from "./db/activity"
 import { STATUSES, Task, UNSTARTABLE_STATUSES } from "./types/task"
 
 const app = express()
@@ -38,14 +39,18 @@ app.get("/tasks", (req, res) => {
   res.json(tasks)
 })
 
+// startedAt reuses the start date of an earlier task with the same title.
 app.post("/tasks", (req, res) => {
-  const { title, priority } = req.body
+  const { title, priority, startedAt } = req.body
+  if (startedAt != null && !(Number.isInteger(startedAt) && startedAt >= 0)) {
+    return res.status(400).json({ error: "startedAt must be a date (epoch ms)" })
+  }
   const maxRow = db.prepare("SELECT MAX(position) as max FROM tasks").get() as { max: number | null }
   const maxPos = maxRow.max ?? -1
   const stmt = db.prepare(
-    "INSERT INTO tasks (title, totalSeconds, isRunning, lastStart, position, priority) VALUES (?, 0, 0, NULL, ?, ?)"
+    "INSERT INTO tasks (title, totalSeconds, isRunning, lastStart, position, priority, startedAt) VALUES (?, 0, 0, NULL, ?, ?, ?)"
   )
-  const result = stmt.run(title, maxPos + 1, priority)
+  const result = stmt.run(title, maxPos + 1, priority ?? "Normal", startedAt ?? null)
   res.json(db.prepare("SELECT * FROM tasks WHERE id = ?").get(result.lastInsertRowid))
 })
 
@@ -56,12 +61,19 @@ app.post("/tasks/:id/toggle", (req, res) => {
   if (!task) return res.status(404).send("Task not found")
   const now = Date.now()
   if (task.isRunning) {
-    db.prepare("UPDATE tasks SET isRunning = 0, lastWorkedAt = ? WHERE id = ?").run(now, id)
+    db.transaction(() => {
+      db.prepare("UPDATE tasks SET isRunning = 0, lastWorkedAt = ? WHERE id = ?").run(now, id)
+      activity.closeSessions(id, now)
+    })()
   } else {
     if (UNSTARTABLE_STATUSES.includes(task.status)) {
       return res.status(409).json({ error: `Cannot start a ${task.status} task` })
     }
     db.transaction(() => {
+      // Starting this task stops whichever one is running.
+      activity.closeSessions(null, now)
+      activity.openSession(id, task.title, now)
+      if (task.status === "Todo") activity.recordStatus(id, task.title, "In progress", now)
       db.prepare("UPDATE tasks SET isRunning = 0").run()
       db.prepare(
         `UPDATE tasks
@@ -97,6 +109,7 @@ app.put("/tasks/:id", (req, res) => {
     if (status != null && status !== "In progress") {
       updateRunningTask()
       db.prepare("UPDATE tasks SET isRunning = 0 WHERE id = ?").run(id)
+      activity.closeSessions(id, Date.now())
     }
     const current = getTask()!
     const next = {
@@ -125,6 +138,12 @@ app.put("/tasks/:id", (req, res) => {
       worked ? now : current.lastWorkedAt,
       id
     )
+    if (next.status !== current.status) {
+      activity.recordStatus(id, next.title, next.status, now)
+    }
+    if (next.totalSeconds !== current.totalSeconds) {
+      activity.recordAdjustment(id, next.title, current.totalSeconds, next.totalSeconds, now)
+    }
   })()
   res.json({ success: true })
 })
@@ -141,10 +160,24 @@ app.post("/tasks/reorder", (req, res) => {
   res.json({ success: true })
 })
 
+// Deletes a task. Its work history stays, for the statistics.
 app.delete("/tasks/:id", (req, res) => {
   const id = parseInt(req.params.id, 10)
-  db.prepare("DELETE FROM tasks WHERE id = ?").run(id)
+  db.transaction(() => {
+    activity.closeSessions(id, Date.now())
+    db.prepare("DELETE FROM tasks WHERE id = ?").run(id)
+  })()
   res.json({ success: true })
+})
+
+// Work sessions overlapping [from, to) and task events inside it (epoch ms).
+app.get("/activity", (req, res) => {
+  const from = Number(req.query.from)
+  const to = Number(req.query.to)
+  if (!Number.isInteger(from) || !Number.isInteger(to)) {
+    return res.status(400).json({ error: "from and to must be epoch ms" })
+  }
+  res.json(activity.between(from, to))
 })
 
 const PORT = Number(process.env.PORT ?? 4000)

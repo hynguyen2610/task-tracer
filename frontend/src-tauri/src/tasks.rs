@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use serde::{Deserialize, Serialize};
 
+use crate::activity;
 use crate::error::{AppError, AppResult};
 
 pub const STATUSES: [&str; 5] = ["Todo", "In progress", "Pending", "Done", "Canceled"];
@@ -109,11 +110,21 @@ pub fn list(conn: &Connection) -> AppResult<Vec<Task>> {
     all(conn)
 }
 
-pub fn create(conn: &Connection, title: &str, priority: Option<&str>) -> AppResult<Task> {
+/// Adds a task at the bottom, as `Todo`. `started_at` reuses the start date of
+/// an earlier task with the same title (SPEC 6.1).
+pub fn create(
+    conn: &Connection,
+    title: &str,
+    priority: Option<&str>,
+    started_at: Option<i64>,
+) -> AppResult<Task> {
+    if started_at.is_some_and(|ms| ms < 0) {
+        return Err(AppError::Invalid("startedAt must be a date (epoch ms)".into()));
+    }
     let max_pos: Option<i64> = conn.query_row("SELECT MAX(position) FROM tasks", [], |r| r.get(0))?;
     conn.execute(
-        "INSERT INTO tasks (title, position, priority) VALUES (?1, ?2, ?3)",
-        params![title, max_pos.unwrap_or(-1) + 1, priority.unwrap_or("Normal")],
+        "INSERT INTO tasks (title, position, priority, startedAt) VALUES (?1, ?2, ?3, ?4)",
+        params![title, max_pos.unwrap_or(-1) + 1, priority.unwrap_or("Normal"), started_at],
     )?;
     get(conn, conn.last_insert_rowid())?.ok_or(AppError::NotFound)
 }
@@ -128,9 +139,16 @@ pub fn toggle(conn: &Connection, id: i64) -> AppResult<Vec<Task>> {
             "UPDATE tasks SET isRunning = 0, lastWorkedAt = ?1 WHERE id = ?2",
             params![now, id],
         )?;
+        activity::close_sessions(conn, Some(id), now)?;
     } else {
         if UNSTARTABLE.contains(&task.status.as_str()) {
             return Err(AppError::Conflict(format!("Cannot start a {} task", task.status)));
+        }
+        // Starting this task stops whichever one is running.
+        activity::close_sessions(conn, None, now)?;
+        activity::open_session(conn, id, &task.title, now)?;
+        if task.status == "Todo" {
+            activity::record_status(conn, id, &task.title, "In progress", now)?;
         }
         conn.execute("UPDATE tasks SET isRunning = 0", [])?;
         conn.execute(
@@ -167,6 +185,7 @@ pub fn update(conn: &Connection, id: i64, changes: &TaskUpdate) -> AppResult<()>
     if changes.status.as_deref().is_some_and(|s| s != "In progress") {
         update_running(conn)?;
         conn.execute("UPDATE tasks SET isRunning = 0 WHERE id = ?1", [id])?;
+        activity::close_sessions(conn, Some(id), now_ms())?;
     }
 
     let current = get(conn, id)?.ok_or(AppError::NotFound)?;
@@ -195,6 +214,13 @@ pub fn update(conn: &Connection, id: i64, changes: &TaskUpdate) -> AppResult<()>
          WHERE id = ?8",
         params![title, total_seconds, priority, status, status_note, started_at, last_worked_at, id],
     )?;
+
+    if status != current.status {
+        activity::record_status(conn, id, &title, &status, now)?;
+    }
+    if total_seconds != current.total_seconds {
+        activity::record_adjustment(conn, id, &title, current.total_seconds, total_seconds, now)?;
+    }
     Ok(())
 }
 
@@ -206,7 +232,9 @@ pub fn reorder(conn: &Connection, ids: &[i64]) -> AppResult<()> {
     Ok(())
 }
 
+/// Deletes a task. Its work history stays, for the statistics.
 pub fn delete(conn: &Connection, id: i64) -> AppResult<()> {
+    activity::close_sessions(conn, Some(id), now_ms())?;
     conn.execute("DELETE FROM tasks WHERE id = ?1", [id])?;
     Ok(())
 }
@@ -231,7 +259,7 @@ mod tests {
     #[test]
     fn new_task_is_todo_and_never_started() {
         let conn = setup();
-        let t = create(&conn, "Write report", Some("High")).unwrap();
+        let t = create(&conn, "Write report", Some("High"), None).unwrap();
         assert_eq!(t.status, "Todo");
         assert_eq!(t.position, 1);
         assert!(t.started_at.is_none() && t.last_worked_at.is_none());
@@ -240,7 +268,7 @@ mod tests {
     #[test]
     fn starting_a_todo_task_makes_it_in_progress_and_stops_the_other() {
         let conn = setup();
-        create(&conn, "Second", None).unwrap();
+        create(&conn, "Second", None, None).unwrap();
         toggle(&conn, 1).unwrap();
         toggle(&conn, 2).unwrap();
         let (first, second) = (task(&conn, 1), task(&conn, 2));
@@ -359,12 +387,87 @@ mod tests {
     #[test]
     fn reorder_and_delete() {
         let conn = setup();
-        create(&conn, "B", None).unwrap();
-        create(&conn, "C", None).unwrap();
+        create(&conn, "B", None, None).unwrap();
+        create(&conn, "C", None, None).unwrap();
         reorder(&conn, &[3, 1, 2]).unwrap();
         let titles: Vec<String> = all(&conn).unwrap().into_iter().map(|t| t.title).collect();
         assert_eq!(titles, ["C", "First task of the day", "B"]);
         delete(&conn, 1).unwrap();
         assert_eq!(all(&conn).unwrap().len(), 2);
+    }
+
+    fn history(conn: &Connection) -> activity::Activity {
+        activity::between(conn, 0, i64::MAX).unwrap()
+    }
+
+    #[test]
+    fn create_can_reuse_a_start_date() {
+        let conn = setup();
+        let t = create(&conn, "Again", None, Some(1_700_000_000_000)).unwrap();
+        assert_eq!((t.status.as_str(), t.started_at), ("Todo", Some(1_700_000_000_000)));
+        assert!(matches!(create(&conn, "Bad", None, Some(-5)), Err(AppError::Invalid(_))));
+    }
+
+    #[test]
+    fn each_start_and_stop_opens_and_closes_one_session() {
+        let conn = setup();
+        create(&conn, "Second", None, None).unwrap();
+
+        toggle(&conn, 1).unwrap(); // start 1
+        toggle(&conn, 2).unwrap(); // start 2, which stops 1
+        toggle(&conn, 2).unwrap(); // pause 2
+        toggle(&conn, 1).unwrap(); // start 1 again
+        update(&conn, 1, &set("Done")).unwrap(); // stops 1
+
+        let sessions = history(&conn).sessions;
+        let ids: Vec<i64> = sessions.iter().map(|s| s.task_id).collect();
+        assert_eq!(ids, [1, 2, 1]);
+        assert!(sessions.iter().all(|s| s.ended_at.is_some()));
+        assert_eq!(sessions[0].task_title, "First task of the day");
+    }
+
+    #[test]
+    fn status_changes_and_time_edits_are_recorded() {
+        let conn = setup();
+        toggle(&conn, 1).unwrap(); // Todo -> In progress
+        update(&conn, 1, &set("Pending")).unwrap();
+        update(&conn, 1, &TaskUpdate { total_seconds: Some(1800), ..Default::default() }).unwrap();
+        // Unchanged values record nothing.
+        update(&conn, 1, &TaskUpdate { total_seconds: Some(1800), ..Default::default() }).unwrap();
+        update(&conn, 1, &set("Pending")).unwrap();
+
+        let events = history(&conn).events;
+        let kinds: Vec<(&str, Option<&str>)> =
+            events.iter().map(|e| (e.kind.as_str(), e.status.as_deref())).collect();
+        assert_eq!(
+            kinds,
+            [("status", Some("In progress")), ("status", Some("Pending")), ("adjustment", None)]
+        );
+        assert_eq!((events[2].from_seconds, events[2].to_seconds), (Some(0), Some(1800)));
+    }
+
+    #[test]
+    fn deleting_a_task_ends_its_session_and_keeps_its_history() {
+        let conn = setup();
+        toggle(&conn, 1).unwrap();
+        delete(&conn, 1).unwrap();
+        let sessions = history(&conn).sessions;
+        assert_eq!(sessions.len(), 1);
+        assert!(sessions[0].ended_at.is_some());
+    }
+
+    #[test]
+    fn activity_returns_sessions_overlapping_the_range() {
+        let conn = setup();
+        activity::open_session(&conn, 1, "A", 1_000).unwrap();
+        activity::close_sessions(&conn, None, 5_000).unwrap();
+        activity::open_session(&conn, 1, "A", 9_000).unwrap(); // still running
+
+        let starts = |from, to| -> Vec<i64> {
+            activity::between(&conn, from, to).unwrap().sessions.iter().map(|s| s.started_at).collect()
+        };
+        assert_eq!(starts(4_000, 6_000), [1_000]); // overlaps the end
+        assert_eq!(starts(5_000, 9_000), Vec::<i64>::new()); // gap only
+        assert_eq!(starts(20_000, 30_000), [9_000]); // open session runs on
     }
 }

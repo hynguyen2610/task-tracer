@@ -1,3 +1,4 @@
+mod activity;
 mod db;
 mod error;
 mod tasks;
@@ -31,8 +32,19 @@ fn get_tasks(state: State<AppState>) -> AppResult<Vec<Task>> {
 }
 
 #[tauri::command]
-fn create_task(state: State<AppState>, title: String, priority: Option<String>) -> AppResult<Task> {
-    with_tx(&state, |c| tasks::create(c, &title, priority.as_deref()))
+fn create_task(
+    state: State<AppState>,
+    title: String,
+    priority: Option<String>,
+    started_at: Option<i64>,
+) -> AppResult<Task> {
+    with_tx(&state, |c| tasks::create(c, &title, priority.as_deref(), started_at))
+}
+
+/// Work sessions overlapping `[from, to)` and task events inside it (epoch ms).
+#[tauri::command]
+fn get_activity(state: State<AppState>, from: i64, to: i64) -> AppResult<activity::Activity> {
+    with_tx(&state, |c| activity::between(c, from, to))
 }
 
 #[tauri::command]
@@ -101,7 +113,8 @@ pub fn run() {
             update_task,
             reorder_tasks,
             delete_task,
-            save_file
+            save_file,
+            get_activity
         ])
         .run(tauri::generate_context!())
         .expect("error while running Task Tracker");

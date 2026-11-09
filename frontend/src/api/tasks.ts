@@ -1,5 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import type { Priority, Status, Task, TaskChanges } from "../types";
+import type { Activity, Priority, Status, Task, TaskChanges } from "../types";
 
 // In the desktop app each function calls a Rust command in
 // src-tauri/src/lib.rs. In a plain browser it calls the Express backend
@@ -32,9 +32,16 @@ export async function getTasks(): Promise<Task[]> {
   return http<Task[]>("GET", "/tasks");
 }
 
-export async function createTask(title: string, priority: Priority) {
-  if (isTauri()) await invoke<Task>("create_task", { title, priority });
-  else await http<Task>("POST", "/tasks", { title, priority });
+/** `startedAt` reuses the start date of an earlier task with the same title. */
+export async function createTask(title: string, priority: Priority, startedAt?: number) {
+  if (isTauri()) await invoke<Task>("create_task", { title, priority, startedAt });
+  else await http<Task>("POST", "/tasks", { title, priority, startedAt });
+}
+
+/** Work sessions overlapping [from, to) and task events inside it (epoch ms). */
+export async function getActivity(from: number, to: number): Promise<Activity> {
+  if (isTauri()) return invoke<Activity>("get_activity", { from, to });
+  return http<Activity>("GET", `/activity?from=${from}&to=${to}`);
 }
 
 /** Starts or pauses a task. Returns every task, with times brought up to date. */
