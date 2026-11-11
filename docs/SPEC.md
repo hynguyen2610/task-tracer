@@ -261,6 +261,12 @@ Next planned tasks takes one item per line; a line starting with `-` becomes a
 sub-item of the line above. The fields are saved in `localStorage` (the
 webview's or the browser's) and come back filled in next time.
 
+When the dialog opens, a weekday heading on the first line of next planned
+tasks (any weekday name followed by `:`, e.g. the default `Monday:`) is set to
+the next weekday after today: Monday to Thursday give the next day; Friday,
+Saturday and Sunday give Monday. Other text, and weekday names anywhere else,
+are left as typed.
+
 ### 8.4 Copy
 
 **Copy report** puts two versions on the clipboard: HTML with inline styles
@@ -383,7 +389,7 @@ The browser has no save dialog; exports are downloaded instead of using
 
 - **Rust core:** `cargo test` in `frontend/src-tauri/`.
 - **Unit tests:** `npm test` in `frontend/` runs Vitest on `src/**/*.test.ts`
-  (day statistics and title matching).
+  (day statistics, title matching and the report's next weekday).
 - **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
   tests in `frontend/e2e/` in Chromium. They start their own backend (port
   4100, a fresh database in the temp folder) and Vite (port 1430), so a

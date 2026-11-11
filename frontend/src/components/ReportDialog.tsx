@@ -7,6 +7,7 @@ import {
   formatReportDate,
   selectReportTasks,
   totalRoundedHours,
+  withNextWeekday,
   type ReportSettings,
 } from "../report/dailyReport";
 import {
@@ -24,11 +25,13 @@ const fieldClass = "border rounded-lg px-2 py-1 w-full text-sm";
 const labelClass = "block text-sm font-medium text-gray-600 mt-3 mb-1";
 
 export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
-  const [settings, setSettings] = useState<ReportSettings>(loadReportSettings);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-
   // Fixed when the dialog opens, so the report doesn't change at midnight.
   const [today] = useState(() => new Date());
+  const [settings, setSettings] = useState<ReportSettings>(() => {
+    const saved = loadReportSettings();
+    return { ...saved, nextPlanned: withNextWeekday(saved.nextPlanned, today) };
+  });
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
   const reportTasks = useMemo(() => selectReportTasks(tasks, today), [tasks, today]);
   const html = useMemo(

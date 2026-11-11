@@ -57,6 +57,27 @@ export function selectReportTasks(tasks: Task[], day: Date): Task[] {
   );
 }
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** The next Monday–Friday after `date`: Friday, Saturday and Sunday give Monday. */
+export function nextWeekday(date: Date): Date {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+  while (next.getDay() === 0 || next.getDay() === 6) next.setDate(next.getDate() + 1);
+  return next;
+}
+
+/**
+ * Sets a weekday heading on the first line of the planned tasks (e.g.
+ * "Monday:") to the next weekday after `today`. Other text is left alone.
+ */
+export function withNextWeekday(nextPlanned: string, today: Date): string {
+  const day = WEEKDAYS[nextWeekday(today).getDay()];
+  return nextPlanned.replace(
+    new RegExp(`^(\\s*)(${WEEKDAYS.join("|")})(\\s*:)`, "i"),
+    (_, lead: string, _old: string, colon: string) => `${lead}${day}${colon}`
+  );
+}
+
 /** 6 Nov 2026 -> "06 Nov" */
 export function formatReportDate(date: Date): string {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date);
