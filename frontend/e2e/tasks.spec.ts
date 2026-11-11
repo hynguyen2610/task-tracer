@@ -350,6 +350,35 @@ test.describe("statistics", () => {
     await expect(taskRowInTable).toContainText("01:30:00");
   });
 
+  test("shows a task's work history across days from the by-task table", async ({ page }) => {
+    const title = uniqueTitle("History");
+    const row = await addTask(page, title);
+    await row.getByRole("button", { name: "Start" }).click();
+    await expect(row).toContainText(/Total Time: 00:00:0[1-9]/, { timeout: 10_000 });
+    await row.getByRole("button", { name: "Pause" }).click();
+    await expect(row.getByRole("button", { name: "Start" })).toBeVisible();
+    await setTimeByEdit(row, "02:00");
+    await row.locator("select").selectOption("Done");
+
+    await openStats(page);
+    await page.getByRole("row").filter({ hasText: title }).getByRole("button", { name: title }).click();
+    const dialog = page.getByRole("dialog", { name: title });
+    await expect(dialog).toContainText("Days worked");
+    await expect(dialog).toContainText("Finished");
+    await expect(dialog).toContainText("02:00:00");
+    const days = dialog.getByTestId("history-day");
+    await expect(days).toHaveCount(1);
+    await expect(days.first()).toContainText(/Worked 00:00:0\d/);
+    await expect(days.first()).toContainText("→ In progress");
+    await expect(days.first()).toContainText("→ Done");
+    await expect(days.first()).toContainText(/Adjusted by \+01:59:5\d/);
+
+    // Picking the day closes the dialog and shows that day.
+    await days.first().getByRole("button").click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Statistics" })).toBeVisible();
+  });
+
   test("keeps the history of a deleted task", async ({ page }) => {
     const title = uniqueTitle("Deleted later");
     const row = await addTask(page, title);

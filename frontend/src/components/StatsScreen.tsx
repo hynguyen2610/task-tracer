@@ -2,13 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Clock } from "lucide-react";
 import * as api from "../api/tasks";
 import { useTimeFormat } from "../hooks/useTimeFormat";
-import { activeDays, buildDayStats, dayKey, dayRange, type TimelineEntry } from "../stats/dayStats";
+import {
+  activeDays,
+  buildDayStats,
+  dayKey,
+  dayRange,
+  type TaskTotal,
+  type TimelineEntry,
+} from "../stats/dayStats";
 import { clock, formatDelta, formatMs } from "../stats/format";
 import { assignTaskColors } from "../stats/taskColors";
 import { loadWorkday, minutesToClock, saveWorkday, type WorkdaySettings } from "../stats/workday";
 import type { Activity, Task } from "../types";
 import DayTimeline from "./DayTimeline";
 import MonthCalendar from "./MonthCalendar";
+import TaskHistoryDialog from "./TaskHistoryDialog";
 import WorkdayDialog from "./WorkdayDialog";
 
 interface StatsScreenProps {
@@ -32,6 +40,7 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [workday, setWorkday] = useState<WorkdaySettings>(loadWorkday);
   const [editingWorkday, setEditingWorkday] = useState(false);
+  const [historyTask, setHistoryTask] = useState<TaskTotal | null>(null);
   const changeWorkday = (next: WorkdaySettings) => {
     setWorkday(next);
     saveWorkday(next);
@@ -111,6 +120,20 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
         </button>
       </div>
 
+      {historyTask && (
+        <TaskHistoryDialog
+          taskId={historyTask.taskId}
+          title={historyTask.title}
+          deleted={historyTask.deleted}
+          onPickDay={(d) => {
+            setSelected(d);
+            setMonth(d);
+            setHistoryTask(null);
+          }}
+          onClose={() => setHistoryTask(null)}
+        />
+      )}
+
       {editingWorkday && (
         <WorkdayDialog
           value={workday}
@@ -177,7 +200,13 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
                           className="inline-block h-2.5 w-2.5 rounded-sm mr-2 align-middle"
                           style={{ background: colors.get(t.taskId) }}
                         />
-                        <span className="text-gray-800">{t.title}</span>
+                        <button
+                          onClick={() => setHistoryTask(t)}
+                          title="Show this task's work history across all days"
+                          className="text-left text-gray-800 hover:text-indigo-700 hover:underline"
+                        >
+                          {t.title}
+                        </button>
                         {t.deleted && <span className="ml-1 text-gray-400">(deleted)</span>}
                       </td>
                       <td className="py-1.5 pl-3 text-right tabular-nums text-gray-700">{fmt(t.trackedMs)}</td>

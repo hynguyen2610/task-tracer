@@ -344,6 +344,28 @@ lunch start, lunch end and workday end. Defaults: 08:30, 12:00, 13:30, 18:00.
 - Saved in `localStorage`; unreadable or invalid saved values fall back to
   the defaults. Work time isn't affected, only breaks.
 
+### 9.5 Task history
+
+Clicking a task's name in **By task** opens its work history: every day that
+task has a session, status change or adjustment, from the first to the last,
+oldest first. It loads the whole history once when it opens (`get_activity`
+from 0 to now) and keeps that task's rows; a running session counts up to that
+moment.
+
+- **Summary:** total (tracked plus all adjustments, never below 0), days
+  worked, the day it began, and **Finished** / **Canceled** with the day, if
+  its latest status is `Done` / `Canceled`; otherwise **Last worked**. If
+  there are adjustments, the tracked time and the signed adjustment total are
+  shown below.
+- **Each day:** its date and total, then in time order each session
+  ("09:00–10:30 Worked 01:30:00", "… –now" and "· running" while it runs),
+  status changes ("→ Done") and adjustments. A session that crosses midnight
+  is split there. At the same minute a status change comes before the session
+  that starts then.
+- Clicking a day's date closes the dialog and shows that day.
+- Deleted tasks are marked "(deleted)". Durations follow the time format
+  switch (5.1). Work hours (9.4) don't apply: every running minute counts.
+
 ## 10. Backend interface
 
 The UI goes through `frontend/src/api/tasks.ts`, which uses 10.1 in the
@@ -389,7 +411,8 @@ The browser has no save dialog; exports are downloaded instead of using
 
 - **Rust core:** `cargo test` in `frontend/src-tauri/`.
 - **Unit tests:** `npm test` in `frontend/` runs Vitest on `src/**/*.test.ts`
-  (day statistics, title matching and the report's next weekday).
+  (day statistics, task history, title matching and the report's next
+  weekday).
 - **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
   tests in `frontend/e2e/` in Chromium. They start their own backend (port
   4100, a fresh database in the temp folder) and Vite (port 1430), so a
