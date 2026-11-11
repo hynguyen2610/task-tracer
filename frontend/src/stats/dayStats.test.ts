@@ -175,6 +175,9 @@ describe("breaks and the workday", () => {
       session(1, at(20), at(21)),
     ]);
     expect(s.breakMs).toBe(HOUR);
+    // Work outside working hours still counts in full.
+    expect(s.trackedMs).toBe(HOUR + 8.5 * HOUR + HOUR);
+    expect(s.workMs).toBe(10.5 * HOUR);
     expect(s.entries.filter((e) => e.kind === "break").map((e) => (e as { ms: number }).ms)).toEqual([
       30 * MIN,
       30 * MIN,
