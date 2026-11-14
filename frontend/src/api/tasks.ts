@@ -10,7 +10,7 @@ import type { Activity, Priority, Status, Task, TaskChanges } from "../types";
 let store: Promise<IdbStore> | null = null;
 
 /** The on-device database, opened on first use. */
-function local(): Promise<IdbStore> {
+export function localStore(): Promise<IdbStore> {
   store ??= IdbStore.open().catch((e) => {
     store = null; // try again on the next call
     throw e;
@@ -20,30 +20,30 @@ function local(): Promise<IdbStore> {
 
 export async function getTasks(): Promise<Task[]> {
   if (isTauri()) return invoke<Task[]>("get_tasks");
-  return (await local()).getTasks(Date.now());
+  return (await localStore()).getTasks(Date.now());
 }
 
 /** `startedAt` reuses the start date of an earlier task with the same title. */
 export async function createTask(title: string, priority: Priority, startedAt?: number) {
   if (isTauri()) await invoke<Task>("create_task", { title, priority, startedAt });
-  else await (await local()).createTask(title, priority, startedAt);
+  else await (await localStore()).createTask(title, priority, startedAt);
 }
 
 /** Work sessions overlapping [from, to) and task events inside it (epoch ms). */
 export async function getActivity(from: number, to: number): Promise<Activity> {
   if (isTauri()) return invoke<Activity>("get_activity", { from, to });
-  return (await local()).getActivity(from, to);
+  return (await localStore()).getActivity(from, to);
 }
 
 /** Starts or pauses a task. Returns every task, with times brought up to date. */
 export async function toggleTask(id: number): Promise<Task[]> {
   if (isTauri()) return invoke<Task[]>("toggle_task", { id });
-  return (await local()).toggleTask(id, Date.now());
+  return (await localStore()).toggleTask(id, Date.now());
 }
 
 export async function updateTask(id: number, changes: TaskChanges) {
   if (isTauri()) await invoke("update_task", { id, changes });
-  else await (await local()).updateTask(id, changes, Date.now());
+  else await (await localStore()).updateTask(id, changes, Date.now());
 }
 
 /** Changes only the status; every other field keeps its value. */
@@ -53,12 +53,12 @@ export async function updateStatus(id: number, status: Status) {
 
 export async function deleteTask(id: number) {
   if (isTauri()) await invoke("delete_task", { id });
-  else await (await local()).deleteTask(id, Date.now());
+  else await (await localStore()).deleteTask(id, Date.now());
 }
 
 export async function reorderTasks(ids: number[]) {
   if (isTauri()) await invoke("reorder_tasks", { ids });
-  else await (await local()).reorderTasks(ids);
+  else await (await localStore()).reorderTasks(ids);
 }
 
 /**

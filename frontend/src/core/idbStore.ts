@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { Activity, Priority, TaskChanges, TaskEvent, WorkSession } from "../types";
 import { activityBetween } from "./activity";
+import type { BackupData } from "./backup";
 import {
   createTask,
   deleteTask,
@@ -112,6 +113,35 @@ export class IdbStore {
     ]);
     await tx.done;
     return activityBetween(sessions.map(fromStored), events, from, to);
+  }
+
+  /** Everything stored, for a backup (10.3). Running time isn't brought up to date. */
+  async exportData(): Promise<BackupData> {
+    const tx = this.db.transaction(STORES, "readonly");
+    const [tasks, sessions, events] = await Promise.all([
+      tx.objectStore("tasks").getAll(),
+      tx.objectStore("sessions").getAll(),
+      tx.objectStore("events").getAll(),
+    ]);
+    await tx.done;
+    return { tasks, sessions: sessions.map(fromStored), events };
+  }
+
+  /** Replaces everything stored with `data`, keeping its ids, in one transaction. */
+  async replaceAll(data: BackupData): Promise<void> {
+    const tx = this.db.transaction(STORES, "readwrite");
+    const tasks = tx.objectStore("tasks");
+    const sessions = tx.objectStore("sessions");
+    const events = tx.objectStore("events");
+    await Promise.all([
+      tasks.clear(),
+      sessions.clear(),
+      events.clear(),
+      ...data.tasks.map((t) => tasks.put(t)),
+      ...data.sessions.map((s) => sessions.put(toStored(s))),
+      ...data.events.map((e) => events.put(e)),
+      tx.done,
+    ]);
   }
 
   /** Runs a rule on what is stored and saves its changes, in one transaction. */

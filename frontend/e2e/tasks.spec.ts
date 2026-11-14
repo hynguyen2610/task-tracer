@@ -531,3 +531,79 @@ test("links ticket ids in the daily report", async ({ page }) => {
   await expect(dialog.getByRole("alert")).toContainText("not a rule");
   await dialog.getByLabel(/Ticket links/).fill("");
 });
+
+test.describe("backup", () => {
+  const openBackup = async (page: Page) => {
+    await page.getByRole("button", { name: /^Backup/ }).click();
+    return page.getByRole("dialog", { name: "Backup" });
+  };
+
+  test("exports everything and imports it into a new browser", async ({ page, browser }) => {
+    const title = uniqueTitle("Backed up");
+    const row = await addTask(page, title, "High");
+    await setTimeByEdit(row, "01:30");
+    await page.getByRole("group", { name: "Time format" }).getByRole("button", { name: "Decimal" }).click();
+
+    // Work worth keeping and no backup yet: the button reminds.
+    await expect(page.getByRole("button", { name: "Backup (no recent backup)" })).toBeVisible();
+    const dialog = await openBackup(page);
+    await expect(dialog.getByTestId("last-backup")).toContainText("never");
+    const downloading = page.waitForEvent("download");
+    await dialog.getByRole("button", { name: "Export backup" }).click();
+    const download = await downloading;
+    expect(download.suggestedFilename()).toMatch(/^task-tracker-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    await expect(dialog.getByRole("status")).toContainText("Saved task-tracker-backup-");
+    await expect(dialog.getByTestId("last-backup")).not.toContainText("never");
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByRole("button", { name: "Backup", exact: true })).toBeVisible();
+
+    const file = JSON.parse(await (await import("node:fs/promises")).readFile(await download.path(), "utf8"));
+    expect(file.tasks.map((t: { title: string }) => t.title)).toContain(title);
+    expect(file.settings.timeFormat).toBe("decimal");
+
+    // A new browser context has its own, empty database.
+    const other = await browser.newPage();
+    await other.goto("/");
+    await expect(taskRow(other, title)).toHaveCount(0);
+    const otherDialog = await openBackup(other);
+    await otherDialog.getByLabel("Backup file").setInputFiles(await download.path());
+    await expect(otherDialog).toContainText(`(${file.tasks.length} task`);
+    await otherDialog.getByRole("button", { name: "Replace" }).click();
+
+    await expect(taskRow(other, title)).toContainText("Priority: High");
+    await expect(taskRow(other, title)).toContainText("Total Time: 1.5 h");
+    await other.close();
+  });
+
+  test("refuses a file that isn't a backup, and changes nothing", async ({ page }) => {
+    const title = uniqueTitle("Kept");
+    await addTask(page, title);
+    const dialog = await openBackup(page);
+    await dialog.getByLabel("Backup file").setInputFiles({
+      name: "notes.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify({ hello: "world" })),
+    });
+    await expect(dialog.getByRole("alert")).toContainText("isn't a Task Tracker backup");
+    await expect(dialog.getByRole("button", { name: "Replace" })).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(taskRow(page, title)).toBeVisible();
+  });
+
+  test("cancelling an import keeps the current data", async ({ page }) => {
+    const title = uniqueTitle("Stays");
+    await addTask(page, title);
+    const dialog = await openBackup(page);
+    const backup = { format: "task-tracker-backup", version: 1, exportedAt: Date.now(), tasks: [], sessions: [], events: [], settings: {} };
+    await dialog.getByLabel("Backup file").setInputFiles({
+      name: "empty.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(backup)),
+    });
+    await expect(dialog).toContainText("(0 tasks, 0 work sessions, 0 changes)");
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog.getByRole("button", { name: "Replace" })).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(taskRow(page, title)).toBeVisible();
+  });
+});

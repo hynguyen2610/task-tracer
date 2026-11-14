@@ -437,6 +437,33 @@ results and error messages, run by the TypeScript rules in
 The browser has no save dialog; exports are downloaded instead of using
 `save_file`.
 
+### 10.3 Backup
+
+Browser only (the desktop app keeps `tasks.db`). The **Backup** button next
+to Statistics opens a dialog to export and import all data as one JSON file
+(`core/backup.ts`, `api/backup.ts`, `components/BackupDialog.tsx`).
+
+- **File:** `task-tracker-backup-YYYY-MM-DD.json`:
+  `{ format: "task-tracker-backup", version: 1, exportedAt, tasks, sessions,
+  events, settings }`. Rows are as stored, with their ids; a running task
+  keeps `isRunning` and `lastStart`, so after an import its time counts on
+  from where it was. `settings` holds the localStorage values `timeFormat`,
+  `dailyReportSettings` and `workday`, as text.
+- **Export** downloads the file and remembers when, in localStorage
+  `lastBackupAt`.
+- **Import** checks the whole file first and names the first problem (not
+  JSON, not a backup, newer version, a field of the wrong type, a repeated id,
+  more than one running task, a session ending before it starts). Missing
+  optional fields are read as not set, and `0`/`1` as booleans, as in
+  `tasks.db`. It then asks before replacing everything (tasks, history and
+  those settings) in one transaction, and reloads the page.
+- **Reminder:** an amber dot on the Backup button while there is work (a task
+  with time or a start date) and no export in the last 7 days.
+- **From a database:** `npm run export:json -- <db> <out.json>` in `backend/`
+  writes this format from any `tasks.db` (Express, desktop app, or older
+  schemas, filled in as in 4.6). `npm run sample:json` writes the sample
+  data as `backend/sample.json`.
+
 ## 11. Tests
 
 - **Rust core:** `cargo test` in `frontend/src-tauri/`.
