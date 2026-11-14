@@ -21,15 +21,16 @@ in `frontend/`):
   folder: `%APPDATA%\com.hy.tasktracker\` on Windows. Every command runs in a
   transaction.
 
-**Browser version** (`npm run dev` in `backend/` and in `frontend/`, or
-`start-windows.bat`):
+**Browser version** (`npm run dev` in `frontend/`):
 
 - **UI:** served by Vite on `http://localhost:1420`.
-- **Backend:** Express + SQLite via `better-sqlite3` (`backend/`), called over
-  HTTP (10.2). Data in `backend/tasks.db`.
+- **Core:** TypeScript (`frontend/src/core/`), running in the page; no server.
+- **Data:** IndexedDB, in the browser's storage on this device (10.2). Each
+  browser, and each device, has its own data.
 
-Both apply the same rules to the same schema, so a `tasks.db` from one can be
-copied to the other. Missing columns are added when it is opened (4.6).
+Both cores apply the same rules (11). The desktop app's `tasks.db` gets
+missing columns added when it is opened (4.6). The Express backend in
+`backend/` is no longer used by the UI.
 
 ## 2. Task
 
@@ -144,8 +145,8 @@ fills it in:
 
 - **At most one task runs at a time.** Starting a task stops whichever task is
   running.
-- **The backend keeps the time** (the Rust core, or Express in the browser
-  version). On every read, toggle and status change it adds the whole seconds
+- **The core keeps the time** (the Rust core, or the TypeScript core in the
+  browser). On every read, toggle and status change it adds the whole seconds
   elapsed since `lastStart` to `totalSeconds`, moves `lastStart` forward by
   exactly those seconds (so the leftover fraction counts next time instead of
   being lost), and sets `lastWorkedAt` to now. Nothing is counted in memory, so
@@ -417,21 +418,21 @@ TypeScript.
 | `save_file`     | `{ defaultName, contents }` (bytes)         | Shows a save dialog and writes the file. The chosen path, or `null` if cancelled. |
 | `get_activity`  | `{ from, to }` (epoch ms)                   | `{ sessions, events }` (9.1): sessions that overlap `[from, to)` and events inside it, oldest first. |
 
-### 10.2 HTTP API
+### 10.2 On-device store
 
-Express backend in `backend/src/index.ts`, at `VITE_API_URL` (default
-`http://localhost:4000`). All bodies are JSON. The backend reads `PORT`
-(default `4000`) and `TASKS_DB` (default `tasks.db`) from the environment.
+`frontend/src/core/idbStore.ts`: the same calls as 10.1, with the same
+results and error messages, run by the TypeScript rules in
+`core/tasks.ts` and `core/activity.ts`. The current time is passed in by
+`api/tasks.ts`.
 
-| Method & path             | Body                                    | Response                    |
-|---------------------------|-----------------------------------------|-----------------------------|
-| `GET /tasks`              | none                                    | All tasks, by `position`.   |
-| `POST /tasks`             | `{ title, priority, startedAt? }`       | The created task, as `Todo`. `400` if `startedAt` isn't a whole number ≥ 0. |
-| `PUT /tasks/:id`          | Same as `update_task`'s `changes`       | `{ success: true }`. `400` if `status` isn't one of the five or `startedAt` isn't a whole number ≥ 0, `404` if not found. Applies 4.4. |
-| `POST /tasks/:id/toggle`  | none                                    | All tasks, by `position`. `404` if not found; `409` when starting a `Pending`, `Done` or `Canceled` task. Applies 4.3. |
-| `POST /tasks/reorder`     | `{ ids: number[] }`, the full new order | `{ success: true }`. `400` if `ids` isn't an array. |
-| `DELETE /tasks/:id`       | none                                    | `{ success: true }`         |
-| `GET /activity?from&to`   | none; `from`, `to` in epoch ms          | Same as `get_activity`. `400` if either isn't a whole number. |
+- **Database:** IndexedDB `task-tracker`, version 1, with three stores:
+  `tasks`, `sessions` (indexed by `startedAt`, and by `open` while a session
+  runs) and `events` (indexed by `at`). Ids are assigned by the stores. A new
+  database starts with one task, "First task of the day".
+- **Transactions:** every call reads all tasks and the open sessions, runs
+  the rule, and saves its changes in one read-write transaction. A refused
+  call saves nothing. Calls from several tabs run one after another, so
+  running time is never added twice.
 
 The browser has no save dialog; exports are downloaded instead of using
 `save_file`.
@@ -442,14 +443,14 @@ The browser has no save dialog; exports are downloaded instead of using
 - **Unit tests:** `npm test` in `frontend/` runs Vitest on `src/**/*.test.ts`
   (day statistics, task history, title matching, the report's next
   weekday and ticket links).
-- **TypeScript core:** `frontend/src/core/` holds the task rules in
-  TypeScript, for the coming on-device (mobile) version. Its tests
-  (`core/tasks.test.ts`) are ported from the Rust core's, so both keep the
-  same rules; change both together.
+- **TypeScript core:** `core/tasks.test.ts` runs the task rules against the
+  in-memory store and the IndexedDB store (`fake-indexeddb`). Its tests are
+  ported from the Rust core's, so both keep the same rules; change both
+  together.
 - **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
-  tests in `frontend/e2e/` in Chromium. They start their own backend (port
-  4100, a fresh database in the temp folder) and Vite (port 1430), so a
-  running dev setup and `backend/tasks.db` are not touched.
+  tests in `frontend/e2e/` in Chromium. They start their own Vite (port
+  1430), so a running dev server is not touched. Each test gets a new
+  browser context, and so a new, empty database.
 
 ## 12. Decisions
 

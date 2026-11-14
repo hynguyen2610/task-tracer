@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Browser version against the Express backend. See playwright.config.ts.
+// Browser version, with its data in IndexedDB. See playwright.config.ts.
 
 let counter = 0;
-/** A title no other test uses, since all tests share one database. */
+/** A title no other task in the test uses. */
 const uniqueTitle = (name: string) => `${name} ${Date.now()}-${counter++}`;
 
 const taskRow = (page: Page, title: string) =>
