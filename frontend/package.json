@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test:e2e": "playwright test",
-    "test": "vitest run"
+    "test": "vitest run",
+    "icons": "pwa-assets-generator"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -29,6 +30,7 @@
     "@types/react": "^19.1.10",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^19.1.7",
+    "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.33.0",
@@ -41,6 +43,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "^3.2.4"
   }
 }

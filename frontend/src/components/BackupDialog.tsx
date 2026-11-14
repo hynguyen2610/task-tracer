@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Upload, X } from "lucide-react";
 import { exportBackup, lastBackupAt, readBackup, restoreBackup } from "../api/backup";
+import { storageState, type StorageState } from "../api/storage";
 import type { Backup } from "../core/backup";
 
 interface BackupDialogProps {
@@ -22,6 +23,11 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Backup | null>(null);
   const [busy, setBusy] = useState(false);
+  const [storage, setStorage] = useState<StorageState>("unknown");
+
+  useEffect(() => {
+    void storageState().then(setStorage);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -98,7 +104,21 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
           browser's data deletes them. Export a backup now and then; import it to restore, or to
           move to another device.
         </p>
-        <p className="text-sm text-gray-600 mt-3" data-testid="last-backup">
+        <p className="text-sm text-gray-600 mt-3" data-testid="storage-state">
+          Storage:{" "}
+          {storage === "kept" ? (
+            <strong className="text-green-700">kept by the browser</strong>
+          ) : storage === "may-be-cleared" ? (
+            <>
+              <strong className="text-amber-700">may be cleared by the browser</strong>. Installing the
+              app to the home screen helps; on iPhone, Safari clears data after 7 days without use
+              unless it is installed.
+            </>
+          ) : (
+            <strong>unknown</strong>
+          )}
+        </p>
+        <p className="text-sm text-gray-600 mt-1" data-testid="last-backup">
           Last backup: <strong>{last ? dateTime(last) : "never"}</strong>
         </p>
 

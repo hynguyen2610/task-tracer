@@ -27,6 +27,9 @@ in `frontend/`):
 - **Core:** TypeScript (`frontend/src/core/`), running in the page; no server.
 - **Data:** IndexedDB, in the browser's storage on this device (10.2). Each
   browser, and each device, has its own data.
+- **Online:** deployed to Vercel as a static site
+  (https://task-tracker-beta-dusky.vercel.app), installable on a phone and
+  usable offline (13).
 
 Both cores apply the same rules (11). The desktop app's `tasks.db` gets
 missing columns added when it is opened (4.6). The Express backend in
@@ -477,7 +480,10 @@ to Statistics opens a dialog to export and import all data as one JSON file
 - **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
   tests in `frontend/e2e/` in Chromium. They start their own Vite (port
   1430), so a running dev server is not touched. Each test gets a new
-  browser context, and so a new, empty database.
+  browser context, and so a new, empty database. The `pwa` project runs
+  `e2e/pwa.spec.ts` on a phone-sized screen against the built app on
+  `vite preview` (port 1431), since the service worker only exists in a
+  build (13).
 
 ## 12. Decisions
 
@@ -494,3 +500,28 @@ to Statistics opens a dialog to export and import all data as one JSON file
 - Similar titles are offered as suggestions while typing; the user decides.
 - The Statistics button replaced the old global pause button, which only
   paused screen updates.
+
+## 13. Installable web app
+
+The browser version is a PWA, made with `vite-plugin-pwa`
+(`frontend/vite.config.ts`). Not in the desktop app: `src/main.tsx` skips
+the service worker there, since its files ship with the app.
+
+- **Install:** Android Chrome: menu, **Install app**. iPhone: Safari,
+  **Share**, **Add to Home Screen**. Desktop Chrome or Edge: the install icon
+  in the address bar. It opens full screen as "Tasks", with the stopwatch
+  icon.
+- **Manifest:** name "Task Tracker", short name "Tasks", `display:
+  standalone`, start and scope `/`, theme `#4f46e5`, background `#f1f5f9`.
+- **Icons:** made from `public/logo.svg` by `npm run icons`
+  (`pwa-assets.config.ts`): 64, 192 and 512 px, a 512 px maskable icon and a
+  180 px Apple icon, both on a solid background, and `favicon.ico`.
+- **Offline:** the service worker precaches the built app, so it opens with
+  no connection; the data is on the device anyway (10.2). A new version
+  installs in the background and is used from the next visit.
+- **Keeping the data:** at startup the app asks the browser to keep its
+  storage (`navigator.storage.persist()`). The Backup dialog shows the answer:
+  kept, may be cleared, or unknown. Safari deletes the data of a site unused
+  for 7 days unless it is added to the home screen, and an installed iPhone
+  app has storage separate from Safari's: move data across with a backup
+  (10.3).
