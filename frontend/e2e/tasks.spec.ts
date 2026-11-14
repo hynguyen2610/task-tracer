@@ -250,6 +250,8 @@ test.describe("start date", () => {
     await expect(row.getByLabel("Start date")).toHaveValue(dateInput(new Date()));
     await expect(row.getByLabel("Start date")).toHaveAttribute("max", dateInput(new Date()));
     await row.getByRole("button", { name: "Save task" }).click();
+    // Saving is async; wait for the form to close before reading the row.
+    await expect(row.getByRole("button", { name: "Edit task" })).toBeVisible();
 
     await expect(row.locator("select")).toHaveValue("Todo");
     await expect(row).not.toContainText("Started:");
@@ -278,6 +280,8 @@ test.describe("start date", () => {
     await row.getByRole("button", { name: "Edit task" }).click();
     await expect(row.getByLabel("Start date")).toHaveValue(dateInput(picked));
     await row.getByRole("button", { name: "Save task" }).click();
+    // Saving is async; wait for the form to close before reading the row.
+    await expect(row.getByRole("button", { name: "Edit task" })).toBeVisible();
 
     await page.getByRole("button", { name: "Daily report" }).click();
     await expect(page.getByRole("dialog")).toContainText(`Start date : ${shortDate(picked)}`);
