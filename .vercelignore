@@ -1,0 +1,13 @@
+# Only the web app is deployed: Vercel builds frontend/ (the project's root
+# directory) from source. See docs/SPEC.md 1.
+.env*
+backend
+docs
+start-*
+*.md
+frontend/node_modules
+frontend/dist
+frontend/src-tauri
+frontend/e2e
+frontend/playwright-report
+frontend/test-results

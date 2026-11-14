@@ -6,3 +6,5 @@ frontend/test-results
 backend/sample.db
 backend/sample.json
 backend/task-tracker-backup.json
+.vercel
+.env*
