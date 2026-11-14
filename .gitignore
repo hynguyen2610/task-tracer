@@ -3,3 +3,4 @@ backend/tasks.db
 frontend/dist
 frontend/playwright-report
 frontend/test-results
+backend/sample.db
