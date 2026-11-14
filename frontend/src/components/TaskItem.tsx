@@ -1,21 +1,15 @@
-import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Check, Edit2, Trash2 } from "lucide-react";
-import { DEFAULT_PRIORITY, PRIORITY_COLORS } from "../constants/priority";
-import {
-  DEFAULT_STATUS,
-  STATUS_COLORS,
-  STATUSES,
-  canStart,
-} from "../constants/status";
+import { PRIORITY_COLORS } from "../constants/priority";
+import { STATUS_COLORS, STATUSES, canStart } from "../constants/status";
 import type { Status, Task, TaskChanges } from "../types";
 import { formatDuration } from "../utils/time";
-import { fromDateInput, toDateInput } from "../utils/date";
 import { formatReportDate } from "../report/dailyReport";
 import { useTimeFormat } from "../hooks/useTimeFormat";
+import { useTaskEditing } from "../hooks/useTaskEditing";
 import OptionSelect from "./OptionSelect";
 import PlayPauseButton from "./PlayPauseButton";
-import TaskEditForm, { type TaskDraft } from "./TaskEditForm";
+import TaskEditForm from "./TaskEditForm";
 
 interface TaskItemProps {
   task: Task;
@@ -29,17 +23,6 @@ interface TaskItemProps {
   onDelete: () => void;
 }
 
-const emptyDraft: TaskDraft = {
-  title: "",
-  totalSeconds: 0,
-  timeEdited: false,
-  priority: DEFAULT_PRIORITY,
-  status: DEFAULT_STATUS,
-  statusNote: "",
-  startDate: "",
-  startDateEdited: false,
-};
-
 export default function TaskItem({
   task,
   index,
@@ -51,43 +34,8 @@ export default function TaskItem({
   onStatusChange,
   onDelete,
 }: TaskItemProps) {
-  const [draft, setDraft] = useState<TaskDraft>(emptyDraft);
+  const { draft, setDraft, startEditing, save } = useTaskEditing(task, onPause, onStartEdit, onSave);
   const timeFormat = useTimeFormat();
-
-  const startEditing = async () => {
-    // Pause a running task first, so the form shows its up-to-date time and
-    // no time is counted while it is being edited.
-    const current = task.isRunning ? ((await onPause()) ?? task) : task;
-    setDraft({
-      title: current.title,
-      totalSeconds: current.totalSeconds,
-      timeEdited: false,
-      priority: current.priority,
-      status: current.status,
-      statusNote: current.statusNote ?? "",
-      startDate: toDateInput(current.startedAt ? new Date(current.startedAt) : new Date()),
-      startDateEdited: false,
-    });
-    onStartEdit();
-  };
-
-  const save = async () => {
-    await onSave({
-      title: draft.title,
-      // Only send the time if it was changed, so opening and saving the form
-      // doesn't round away seconds.
-      totalSeconds: draft.timeEdited ? draft.totalSeconds : undefined,
-      priority: draft.priority,
-      status: draft.status,
-      statusNote: draft.statusNote,
-      // Likewise only a picked date is sent: an unstarted task keeps no start
-      // date (today is just the picker's default) until it really starts.
-      startedAt: draft.startDateEdited
-        ? (fromDateInput(draft.startDate) ?? undefined)
-        : undefined,
-    });
-    setDraft(emptyDraft);
-  };
 
   return (
     <Draggable draggableId={task.id.toString()} index={index}>
