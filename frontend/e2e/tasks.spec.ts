@@ -521,7 +521,7 @@ test("links ticket ids in the daily report", async ({ page }) => {
   await dialog.getByLabel(/Ticket links/).fill(`${prefix} https://jira.example.com/browse/{id}`);
   const link = dialog.locator(".report-preview a", { hasText: key });
   await expect(link).toHaveAttribute("href", `https://jira.example.com/browse/${key}`);
-  await expect(dialog.locator(".report-preview")).toContainText(`Task ${key}: Analyze the mapping`);
+  await expect(dialog.locator(".report-preview")).toContainText(`Task #${key}: Analyze the mapping`);
 
   // Clicking a link in the preview stays in the app.
   await link.click();

@@ -244,7 +244,7 @@ are left out.
 
 - Tasks are numbered from 1 in the report, not by list position. A task
   whose title starts with a ticket id (8.5) is headed by that id instead:
-  `Task ABC-12: <rest of the title>`.
+  `Task #ABC-12: <rest of the title>`.
 - **Status** labels match the app, except `Canceled`, shown as `CANCELLED`.
   The label has a background highlight: `Done` bright green, `In progress`
   light blue, `Pending` orange, `CANCELLED` pink. `Todo` has none.
@@ -290,9 +290,11 @@ ABC- https://yourcompany.atlassian.net/browse/{id}
 - An id is the prefix followed by digits, matched without regard to case,
   and not part of a longer word or number (`XABC-1` doesn't match; `ABC-1234`
   matches whole). When prefixes overlap, the longer one wins.
-- In the HTML version every id anywhere in the email (task titles and status
-  notes, greeting, intro, next planned tasks, issues, signature) becomes a
-  link. The plain-text version keeps the ids as plain text.
+- Every id anywhere in the email (task titles and status notes, greeting,
+  intro, next planned tasks, issues, signature) is shown with `#` before it:
+  `MAIL-1234` becomes `#MAIL-1234`. A `#` already typed before the id is
+  kept, not doubled. In the HTML version the `#` and id together are the
+  link; the plain-text version shows them without a link.
 - A task title starting with an id, optionally followed by `:` or `-`, is
   headed by that id (8.2).
 - Lines that aren't a valid rule are listed under the field and ignored.

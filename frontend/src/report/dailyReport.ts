@@ -1,5 +1,11 @@
 import type { Status, Task } from "../types";
-import { leadingTicket, parseTicketRules, ticketFinder, type TicketMatch } from "./ticketLinks";
+import {
+  leadingTicket,
+  parseTicketRules,
+  replaceTickets,
+  ticketFinder,
+  type TicketMatch,
+} from "./ticketLinks";
 
 /** The editable email text around the task list. */
 export interface ReportSettings {
@@ -148,7 +154,7 @@ const findTickets = (settings: ReportSettings) =>
   ticketFinder(parseTicketRules(settings.ticketLinks).rules);
 
 /**
- * "Task #2: Fix login", or "Task ABC-12: Fix login" when the title starts
+ * "Task #2: Fix login", or "Task #ABC-12: Fix login" when the title starts
  * with a ticket id (the id then isn't repeated in the title).
  */
 function taskHeading(task: Task, find: (text: string) => TicketMatch[]) {
@@ -157,20 +163,12 @@ function taskHeading(task: Task, find: (text: string) => TicketMatch[]) {
 }
 
 const linkHtml = (t: TicketMatch) =>
-  `<a href="${escapeHtml(t.url)}" style="color:#1155cc;">${escapeHtml(t.id)}</a>`;
+  `<a href="${escapeHtml(t.url)}" style="color:#1155cc;">${escapeHtml(t.label)}</a>`;
 
 export function buildReportHtml(settings: ReportSettings, tasks: Task[], date: Date): string {
   const find = findTickets(settings);
   /** Escaped text with every ticket id as a link. */
-  const rich = (text: string) => {
-    let out = "";
-    let last = 0;
-    for (const t of find(text)) {
-      out += escapeHtml(text.slice(last, t.index)) + linkHtml(t);
-      last = t.index + t.id.length;
-    }
-    return out + escapeHtml(text.slice(last));
-  };
+  const rich = (text: string) => replaceTickets(text, find, linkHtml, escapeHtml);
   const htmlLines = (text: string) => lines(text).map(rich).join("<br>");
 
   const taskItems = tasks.map((task, i) => {
@@ -215,19 +213,23 @@ export function buildReportHtml(settings: ReportSettings, tasks: Task[], date: D
 // ---- Plain text (for mail clients that drop formatting) ----
 
 export function buildReportText(settings: ReportSettings, tasks: Task[], date: Date): string {
+  const find = findTickets(settings);
+  /** Ticket ids shown as "#ABC-12", like the HTML version, but not linked. */
+  const plain = (text: string) => replaceTickets(text, find, (t) => t.label);
+  const plainLines = (text: string) => lines(text).map(plain);
+
   const out: string[] = [];
-  out.push(...lines(settings.greeting));
-  out.push(...lines(settings.intro.replace("{date}", formatReportDate(date))), "");
+  out.push(...plainLines(settings.greeting));
+  out.push(...plainLines(settings.intro.replace("{date}", formatReportDate(date))), "");
 
   out.push("1. Task in Review/Task in Progress");
   if (tasks.length === 0) out.push("   o None");
-  const find = findTickets(settings);
   tasks.forEach((task, i) => {
     const f = taskFacts(task);
     const heading = taskHeading(task, find);
     out.push(
-      `   o Task ${heading.ticket ? heading.ticket.id : `#${i + 1}`}: ${heading.title}`,
-      `      - Status : ${f.status}${f.note}`,
+      `   o Task ${heading.ticket ? heading.ticket.label : `#${i + 1}`}: ${plain(heading.title)}`,
+      `      - Status : ${f.status}${plain(f.note)}`,
       `      - Start date : ${f.start}`,
       `      - ETA : ${f.eta}`
     );
@@ -237,14 +239,14 @@ export function buildReportText(settings: ReportSettings, tasks: Task[], date: D
   const planned = parsePlanned(settings.nextPlanned);
   if (planned.length === 0) out.push("   o None");
   planned.forEach((item) => {
-    out.push(`   o ${item.text}`);
-    item.children.forEach((c) => out.push(`      - ${c}`));
+    out.push(`   o ${plain(item.text)}`);
+    item.children.forEach((c) => out.push(`      - ${plain(c)}`));
   });
 
   out.push("3. Issue/Concerns/Blocks");
-  const issues = lines(settings.issues);
+  const issues = plainLines(settings.issues);
   out.push(...(issues.length ? issues : ["None"]).map((l) => `   ${l.trim()}`), "");
 
-  out.push(...lines(settings.signature));
+  out.push(...plainLines(settings.signature));
   return out.join("\n");
 }

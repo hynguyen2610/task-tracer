@@ -7,10 +7,33 @@ export interface TicketRule {
 }
 
 export interface TicketMatch {
-  /** As written, e.g. "ABC-123". */
+  /** As written, without a "#" before it, e.g. "ABC-123". */
   id: string;
+  /** What the email shows: the id with "#" before it, e.g. "#ABC-123". */
+  label: string;
   url: string;
+  /** Where the match starts and ends in the text, including a "#" typed before the id. */
   index: number;
+  end: number;
+}
+
+/**
+ * `text` with every ticket id replaced by `render(ticket)`, and the text in
+ * between passed through `other`.
+ */
+export function replaceTickets(
+  text: string,
+  find: (text: string) => TicketMatch[],
+  render: (ticket: TicketMatch) => string,
+  other: (text: string) => string = (s) => s
+): string {
+  let out = "";
+  let last = 0;
+  for (const t of find(text)) {
+    out += other(text.slice(last, t.index)) + render(t);
+    last = t.end;
+  }
+  return out + other(text.slice(last));
 }
 
 /**
@@ -49,7 +72,15 @@ export function ticketFinder(rules: TicketRule[]): (text: string) => TicketMatch
       const url = sorted[i].url
         .replace(/\{id\}/g, encodeURIComponent(m[0]))
         .replace(/\{num\}/g, num);
-      found.push({ id: m[0], url, index: m.index! });
+      // A "#" typed before the id is part of the match, so it isn't doubled.
+      const hashed = m.index! > 0 && text[m.index! - 1] === "#";
+      found.push({
+        id: m[0],
+        label: m[0].startsWith("#") ? m[0] : `#${m[0]}`,
+        url,
+        index: hashed ? m.index! - 1 : m.index!,
+        end: m.index! + m[0].length,
+      });
     }
     return found;
   };
@@ -65,6 +96,6 @@ export function leadingTicket(
 ): { ticket: TicketMatch; rest: string } | null {
   const first = find(title)[0];
   if (!first || title.slice(0, first.index).trim() !== "") return null;
-  const rest = title.slice(first.index + first.id.length).replace(/^\s*[:\-–]?\s*/, "");
+  const rest = title.slice(first.end).replace(/^\s*[:\-–]?\s*/, "");
   return { ticket: first, rest };
 }
