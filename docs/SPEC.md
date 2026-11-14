@@ -442,6 +442,10 @@ The browser has no save dialog; exports are downloaded instead of using
 - **Unit tests:** `npm test` in `frontend/` runs Vitest on `src/**/*.test.ts`
   (day statistics, task history, title matching, the report's next
   weekday and ticket links).
+- **TypeScript core:** `frontend/src/core/` holds the task rules in
+  TypeScript, for the coming on-device (mobile) version. Its tests
+  (`core/tasks.test.ts`) are ported from the Rust core's, so both keep the
+  same rules; change both together.
 - **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
   tests in `frontend/e2e/` in Chromium. They start their own backend (port
   4100, a fresh database in the temp folder) and Vite (port 1430), so a
