@@ -242,7 +242,9 @@ are left out.
 <signature>
 ```
 
-- Tasks are numbered from 1 in the report, not by list position.
+- Tasks are numbered from 1 in the report, not by list position. A task
+  whose title starts with a ticket id (8.5) is headed by that id instead:
+  `Task ABC-12: <rest of the title>`.
 - **Status** labels match the app, except `Canceled`, shown as `CANCELLED`.
   The label has a background highlight: `Done` bright green, `In progress`
   light blue, `Pending` orange, `CANCELLED` pink. `Todo` has none.
@@ -252,8 +254,8 @@ are left out.
 
 ### 8.3 Email text
 
-The dialog has fields for greeting, intro, next planned tasks, issues and
-signature, with a live preview. Above them it shows **Total ETA (rounded)**:
+The dialog has fields for greeting, intro, next planned tasks, issues,
+signature and ticket links (8.5), with a live preview. Above them it shows **Total ETA (rounded)**:
 the sum of the report's rounded ETAs, so it matches what a reader adds up from
 the email. It is shown in the dialog only, not copied.
 
@@ -272,6 +274,30 @@ are left as typed.
 **Copy report** puts two versions on the clipboard: HTML with inline styles
 (lists and highlights survive pasting into email) and plain text, for places
 that only accept text.
+
+### 8.5 Ticket links
+
+**Ticket links** defines ticket ids (for example Jira keys) and where they
+link to, one rule per line: the id prefix, a space, then an `http`/`https`
+URL containing `{id}` (the whole id, e.g. `ABC-12`) and/or `{num}` (its
+digits, e.g. `12`):
+
+```
+ABC- https://yourcompany.atlassian.net/browse/{id}
+#    https://redmine.example.com/issues/{num}
+```
+
+- An id is the prefix followed by digits, matched without regard to case,
+  and not part of a longer word or number (`XABC-1` doesn't match; `ABC-1234`
+  matches whole). When prefixes overlap, the longer one wins.
+- In the HTML version every id anywhere in the email (task titles and status
+  notes, greeting, intro, next planned tasks, issues, signature) becomes a
+  link. The plain-text version keeps the ids as plain text.
+- A task title starting with an id, optionally followed by `:` or `-`, is
+  headed by that id (8.2).
+- Lines that aren't a valid rule are listed under the field and ignored.
+  Saved with the other fields. Empty by default: no links.
+- Links in the preview don't open, so the app isn't navigated away.
 
 ## 9. Statistics
 
@@ -411,8 +437,8 @@ The browser has no save dialog; exports are downloaded instead of using
 
 - **Rust core:** `cargo test` in `frontend/src-tauri/`.
 - **Unit tests:** `npm test` in `frontend/` runs Vitest on `src/**/*.test.ts`
-  (day statistics, task history, title matching and the report's next
-  weekday).
+  (day statistics, task history, title matching, the report's next
+  weekday and ticket links).
 - **Browser version:** `npm run test:e2e` in `frontend/` runs the Playwright
   tests in `frontend/e2e/` in Chromium. They start their own backend (port
   4100, a fresh database in the temp folder) and Vite (port 1430), so a

@@ -1,4 +1,5 @@
 import type { Status, Task } from "../types";
+import { leadingTicket, parseTicketRules, ticketFinder, type TicketMatch } from "./ticketLinks";
 
 /** The editable email text around the task list. */
 export interface ReportSettings {
@@ -9,6 +10,8 @@ export interface ReportSettings {
   nextPlanned: string;
   issues: string;
   signature: string;
+  /** One rule per line: ticket prefix, then URL with {id} or {num}. See ticketLinks.ts. */
+  ticketLinks: string;
 }
 
 export const DEFAULT_REPORT_SETTINGS: ReportSettings = {
@@ -17,6 +20,7 @@ export const DEFAULT_REPORT_SETTINGS: ReportSettings = {
   nextPlanned: "Monday:\n- Continue with Onboarding Courses.",
   issues: "None",
   signature: "Best regards,\nHy",
+  ticketLinks: "",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -137,22 +141,50 @@ const escapeHtml = (s: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-const htmlLines = (text: string) => lines(text).map(escapeHtml).join("<br>");
-
 const ul = (type: "circle" | "square", items: string[]) =>
   `<ul style="list-style-type:${type};margin:0;">${items.map((i) => `<li>${i}</li>`).join("")}</ul>`;
 
+const findTickets = (settings: ReportSettings) =>
+  ticketFinder(parseTicketRules(settings.ticketLinks).rules);
+
+/**
+ * "Task #2: Fix login", or "Task ABC-12: Fix login" when the title starts
+ * with a ticket id (the id then isn't repeated in the title).
+ */
+function taskHeading(task: Task, find: (text: string) => TicketMatch[]) {
+  const lead = leadingTicket(task.title, find);
+  return lead ? { ticket: lead.ticket, title: lead.rest } : { ticket: null, title: task.title };
+}
+
+const linkHtml = (t: TicketMatch) =>
+  `<a href="${escapeHtml(t.url)}" style="color:#1155cc;">${escapeHtml(t.id)}</a>`;
+
 export function buildReportHtml(settings: ReportSettings, tasks: Task[], date: Date): string {
+  const find = findTickets(settings);
+  /** Escaped text with every ticket id as a link. */
+  const rich = (text: string) => {
+    let out = "";
+    let last = 0;
+    for (const t of find(text)) {
+      out += escapeHtml(text.slice(last, t.index)) + linkHtml(t);
+      last = t.index + t.id.length;
+    }
+    return out + escapeHtml(text.slice(last));
+  };
+  const htmlLines = (text: string) => lines(text).map(rich).join("<br>");
+
   const taskItems = tasks.map((task, i) => {
     const f = taskFacts(task);
     const color = STATUS_HIGHLIGHTS[task.status];
     const status = color
       ? `<span style="background-color:${color};">${escapeHtml(f.status)}</span>`
       : escapeHtml(f.status);
+    const heading = taskHeading(task, find);
+    const label = heading.ticket ? `Task ${linkHtml(heading.ticket)}` : `Task #${i + 1}`;
     return (
-      `Task #${i + 1}: ${escapeHtml(task.title)}` +
+      `${label}: ${rich(heading.title)}` +
       ul("square", [
-        `Status : ${status}${escapeHtml(f.note)}`,
+        `Status : ${status}${rich(f.note)}`,
         `Start date : ${f.start}`,
         `ETA : ${f.eta}`,
       ])
@@ -161,8 +193,8 @@ export function buildReportHtml(settings: ReportSettings, tasks: Task[], date: D
 
   const planned = parsePlanned(settings.nextPlanned).map(
     (item) =>
-      escapeHtml(item.text) +
-      (item.children.length ? ul("square", item.children.map(escapeHtml)) : "")
+      rich(item.text) +
+      (item.children.length ? ul("square", item.children.map(rich)) : "")
   );
 
   const intro = settings.intro.replace("{date}", formatReportDate(date));
@@ -189,10 +221,12 @@ export function buildReportText(settings: ReportSettings, tasks: Task[], date: D
 
   out.push("1. Task in Review/Task in Progress");
   if (tasks.length === 0) out.push("   o None");
+  const find = findTickets(settings);
   tasks.forEach((task, i) => {
     const f = taskFacts(task);
+    const heading = taskHeading(task, find);
     out.push(
-      `   o Task #${i + 1}: ${task.title}`,
+      `   o Task ${heading.ticket ? heading.ticket.id : `#${i + 1}`}: ${heading.title}`,
       `      - Status : ${f.status}${f.note}`,
       `      - Start date : ${f.start}`,
       `      - ETA : ${f.eta}`

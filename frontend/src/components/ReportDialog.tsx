@@ -15,6 +15,7 @@ import {
   loadReportSettings,
   saveReportSettings,
 } from "../report/reportStorage";
+import { parseTicketRules } from "../report/ticketLinks";
 
 interface ReportDialogProps {
   tasks: Task[];
@@ -37,6 +38,11 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
   const html = useMemo(
     () => buildReportHtml(settings, reportTasks, today),
     [settings, reportTasks, today]
+  );
+
+  const invalidTicketLines = useMemo(
+    () => parseTicketRules(settings.ticketLinks).invalid,
+    [settings.ticketLinks]
   );
 
   useEffect(() => saveReportSettings(settings), [settings]);
@@ -135,6 +141,27 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
               value={settings.signature}
               onChange={set("signature")}
             />
+
+            <label className={labelClass} htmlFor="ticket-links">
+              Ticket links{" "}
+              <span className="font-normal">
+                (one per line: id prefix, a space, then the URL with {"{id}"} or {"{num}"})
+              </span>
+            </label>
+            <textarea
+              id="ticket-links"
+              className={`${fieldClass} font-mono`}
+              rows={2}
+              placeholder={"ABC- https://yourcompany.atlassian.net/browse/{id}"}
+              value={settings.ticketLinks}
+              onChange={set("ticketLinks")}
+            />
+            {invalidTicketLines.length > 0 && (
+              <p role="alert" className="text-sm text-red-600 mt-1">
+                Not used (needs a prefix, a space, and an http(s) URL with {"{id}"} or {"{num}"}):{" "}
+                {invalidTicketLines.join(", ")}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col">
@@ -142,6 +169,10 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
             {/* Built from escaped task and settings text, so safe to render. */}
             <div
               className="report-preview border rounded-lg p-3 flex-1 overflow-auto max-h-[60vh] text-gray-900"
+              // Ticket links are for the email; following one here would leave the app.
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a")) e.preventDefault();
+              }}
               dangerouslySetInnerHTML={{ __html: html }}
             />
             <div className="flex items-center justify-end gap-3 mt-3">

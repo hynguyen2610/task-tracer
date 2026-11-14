@@ -509,3 +509,25 @@ test("opens and closes the daily report", async ({ page }) => {
   await dialog.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toHaveCount(0);
 });
+
+test("links ticket ids in the daily report", async ({ page }) => {
+  const key = `T${Date.now() % 100000}-42`;
+  const prefix = key.split("-")[0] + "-";
+  const row = await addTask(page, uniqueTitle(`${key} Analyze the mapping`));
+  await row.locator("select").selectOption("In progress");
+
+  await page.getByRole("button", { name: "Daily report" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel(/Ticket links/).fill(`${prefix} https://jira.example.com/browse/{id}`);
+  const link = dialog.locator(".report-preview a", { hasText: key });
+  await expect(link).toHaveAttribute("href", `https://jira.example.com/browse/${key}`);
+  await expect(dialog.locator(".report-preview")).toContainText(`Task ${key}: Analyze the mapping`);
+
+  // Clicking a link in the preview stays in the app.
+  await link.click();
+  await expect(dialog).toBeVisible();
+
+  await dialog.getByLabel(/Ticket links/).fill("not a rule");
+  await expect(dialog.getByRole("alert")).toContainText("not a rule");
+  await dialog.getByLabel(/Ticket links/).fill("");
+});
