@@ -91,6 +91,7 @@ describe("report with ticket links", () => {
     expect(html).toContain(`Task ${link("ABC-12")}: Analyze the mapping`);
     expect(html).toContain("Task #2: No ticket");
     expect(html).toContain(`(waiting on ${link("ABC-7")})`);
+    expect(html).toContain(`Status : <span style="background-color:#ffff00;">InProgress</span>`);
     expect(html).toContain(`Continue with ${link("ABC-12")}`);
     expect(html).toContain(`Blocked by ${link("ABC-9")} &lt;urgent&gt;`);
   });

@@ -245,9 +245,10 @@ are left out.
 - Tasks are numbered from 1 in the report, not by list position. A task
   whose title starts with a ticket id (8.5) is headed by that id instead:
   `Task #ABC-12: <rest of the title>`.
-- **Status** labels match the app, except `Canceled`, shown as `CANCELLED`.
-  The label has a background highlight: `Done` bright green, `In progress`
-  light blue, `Pending` orange, `CANCELLED` pink. `Todo` has none.
+- **Status** labels match the app, except `In progress`, shown as
+  `InProgress`, and `Canceled`, shown as `CANCELLED`. The label has a
+  background highlight: `Done` bright green, `InProgress` yellow, `Pending`
+  orange, `CANCELLED` pink. `Todo` has none.
 - **ETA** is the total tracked time rounded to the nearest quarter hour, e.g.
   `1.25 hour`. Any tracked time under 7.5 minutes shows as `0.25 hour`.
 - An empty section shows `None`.

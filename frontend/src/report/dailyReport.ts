@@ -31,7 +31,7 @@ export const DEFAULT_REPORT_SETTINGS: ReportSettings = {
 
 const STATUS_LABELS: Record<Status, string> = {
   Todo: "Todo",
-  "In progress": "In progress",
+  "In progress": "InProgress",
   Pending: "Pending",
   Done: "Done",
   Canceled: "CANCELLED",
@@ -39,7 +39,7 @@ const STATUS_LABELS: Record<Status, string> = {
 
 /** Highlight colors for the status word, as used in the email. */
 const STATUS_HIGHLIGHTS: Partial<Record<Status, string>> = {
-  "In progress": "#9fc5e8",
+  "In progress": "#ffff00",
   Pending: "#ffc000",
   Done: "#00ff00",
   Canceled: "#ff99cc",
