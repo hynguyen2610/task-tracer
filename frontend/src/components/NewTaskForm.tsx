@@ -72,8 +72,9 @@ export default function NewTaskForm({ tasks, onAdd }: NewTaskFormProps) {
 
   return (
     <div className="mb-6">
-      <div className="flex space-x-2">
-        <div className="relative flex-1">
+      {/* On a phone the title gets its own line; priority and Add go below. */}
+      <div className="flex flex-wrap gap-2">
+        <div className="relative basis-full sm:basis-0 sm:flex-1">
           <input
             ref={inputRef}
             type="text"
@@ -135,7 +136,7 @@ export default function NewTaskForm({ tasks, onAdd }: NewTaskFormProps) {
         />
         <button
           onClick={submit}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          className="flex-1 sm:flex-none px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
         >
           ➕ Add
         </button>

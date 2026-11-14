@@ -33,13 +33,13 @@ export default function App() {
 
   return (
     <TimeFormatContext.Provider value={format}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-8">
-        <div className="w-full max-w-7xl bg-white rounded-2xl shadow-xl p-6 relative">
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-2 sm:p-8">
+        <div className="w-full max-w-7xl bg-white rounded-2xl shadow-xl p-4 sm:p-6 relative">
           {screen === "stats" ? (
             <StatsScreen tasks={tasks} onBack={() => setScreen("tasks")} />
           ) : (
             <>
-              <div className="absolute top-4 right-4 flex gap-2">
+              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2">
                 {canBackup() && (
                   <button
                     onClick={() => setBackupOpen(true)}

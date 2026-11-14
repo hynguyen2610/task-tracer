@@ -6,6 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
 // dev server is never touched.
 //
 // - "chromium": the app on the Vite dev server.
+// - "phone": the same, on a small phone screen with touch (iPhone SE size,
+//   in Chromium).
 // - "pwa": the built app on `vite preview`, since the service worker only
 //   exists in a build (docs/SPEC.md 13).
 const UI_PORT = 1430;
@@ -20,8 +22,13 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: "pwa.spec.ts",
+      testIgnore: ["pwa.spec.ts", "mobile.spec.ts"],
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${UI_PORT}` },
+    },
+    {
+      name: "phone",
+      testMatch: "mobile.spec.ts",
+      use: { ...devices["iPhone SE"], browserName: "chromium", baseURL: `http://localhost:${UI_PORT}` },
     },
     {
       name: "pwa",

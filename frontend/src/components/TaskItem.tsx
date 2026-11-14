@@ -97,13 +97,14 @@ export default function TaskItem({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           data-testid="task"
-          className={`flex items-center justify-between p-4 rounded-xl shadow-sm ${
+          className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 rounded-xl shadow-sm ${
             STATUS_COLORS[task.status] ?? PRIORITY_COLORS[task.priority]
           } ${task.isRunning ? "glow border-blue-500" : ""}`}
         >
-          <div className="flex items-center flex-1 min-w-0 mr-2">
-            <div className="flex-shrink-0 mr-4">
-              <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
+          {/* On a phone the buttons go on a line of their own, so the title gets the width. */}
+          <div className="flex items-start sm:items-center flex-1 min-w-0">
+            <div className="flex-shrink-0 mr-3 sm:mr-4">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
                 {index + 1}
               </div>
             </div>
@@ -146,7 +147,7 @@ export default function TaskItem({
             )}
           </div>
 
-          <div className="flex flex-shrink-0 items-center space-x-2">
+          <div className="flex flex-shrink-0 items-center gap-2 self-end sm:self-auto">
             <PlayPauseButton
               isRunning={task.isRunning}
               onClick={onToggle}

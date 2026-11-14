@@ -23,7 +23,8 @@ export default function TasksSummary({ tasks, onTimeFormatChange }: TasksSummary
         <div className="mr-auto">
           <TimeFormatToggle value={timeFormat} onChange={onTimeFormatChange} />
         </div>
-        <p className="text-right text-gray-700 font-medium">
+        {/* Its own line under the buttons on a phone. */}
+        <p className="order-last sm:order-none w-full sm:w-auto sm:text-right text-gray-700 font-medium">
           Total Time (All Tasks): {formatDuration(totalSeconds, timeFormat)}
         </p>
         <button

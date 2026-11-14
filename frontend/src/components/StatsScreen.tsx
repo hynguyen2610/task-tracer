@@ -98,7 +98,7 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <button
           onClick={onBack}
           aria-label="Back to tasks"
@@ -186,8 +186,8 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
                 <thead>
                   <tr className="text-left text-gray-500 border-b">
                     <th className="py-1 font-medium">Task</th>
-                    <th className="py-1 pl-3 font-medium text-right">Tracked</th>
-                    <th className="py-1 pl-3 font-medium text-right">Adjusted</th>
+                    <th className="hidden sm:table-cell py-1 pl-3 font-medium text-right">Tracked</th>
+                    <th className="hidden sm:table-cell py-1 pl-3 font-medium text-right">Adjusted</th>
                     <th className="py-1 pl-3 font-medium text-right">Total</th>
                   </tr>
                 </thead>
@@ -209,8 +209,8 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
                         </button>
                         {t.deleted && <span className="ml-1 text-gray-400">(deleted)</span>}
                       </td>
-                      <td className="py-1.5 pl-3 text-right tabular-nums text-gray-700">{fmt(t.trackedMs)}</td>
-                      <td className="py-1.5 pl-3 text-right tabular-nums text-gray-700">
+                      <td className="hidden sm:table-cell py-1.5 pl-3 text-right tabular-nums text-gray-700">{fmt(t.trackedMs)}</td>
+                      <td className="hidden sm:table-cell py-1.5 pl-3 text-right tabular-nums text-gray-700">
                         {t.adjustmentMs ? formatDelta(t.adjustmentMs / 1000, timeFormat) : "–"}
                       </td>
                       <td className="py-1.5 pl-3 text-right tabular-nums font-medium text-gray-800">

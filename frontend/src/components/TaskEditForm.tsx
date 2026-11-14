@@ -37,7 +37,7 @@ export default function TaskEditForm({
   const timeFormat = useTimeFormat();
   const startDateId = useId();
   return (
-    <div className="space-y-2 flex-1">
+    <div className="space-y-2 flex-1 min-w-0">
       <label className={labelClass}>Title</label>
       <input
         type="text"
@@ -105,7 +105,7 @@ export default function TaskEditForm({
         onKeyDown={(e) => {
           if (e.key === "Enter") onSave();
         }}
-        className="border rounded-lg px-2 py-1"
+        className="border rounded-lg px-2 py-1 max-w-full"
       />
     </div>
   );

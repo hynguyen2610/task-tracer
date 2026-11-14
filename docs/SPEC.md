@@ -342,9 +342,11 @@ All times are local. A session that crosses midnight is split there.
 - **Timeline bar:** from the hour before the first start to the hour after
   the last stop. One bar per session, coloured by task (the first 8 tasks of
   the day get their own colour, the rest share grey). Hovering a bar shows
-  the task, its times and its length.
+  the task, its times and its length. On a phone, a tap anywhere on the
+  track shows the nearest session (a short one is too thin to hit), and a
+  tap elsewhere hides it.
 - **By task:** each task worked on that day with tracked time, adjustments
-  and total, largest first. Deleted tasks are marked "(deleted)" and keep
+  and total, largest first. On a phone only the task and total are shown. Deleted tasks are marked "(deleted)" and keep
   their last known title; other tasks show their current title.
 - **Timeline list:** in time order, "Started", "Paused … after", "Break of …,
   until …", status changes ("… → Done") and adjustments ("Adjusted … by
@@ -483,7 +485,8 @@ to Statistics opens a dialog to export and import all data as one JSON file
   browser context, and so a new, empty database. The `pwa` project runs
   `e2e/pwa.spec.ts` on a phone-sized screen against the built app on
   `vite preview` (port 1431), since the service worker only exists in a
-  build (13).
+  build (13). The `phone` project runs `e2e/mobile.spec.ts` at iPhone SE
+  size with touch (14).
 
 ## 12. Decisions
 
@@ -525,3 +528,21 @@ the service worker there, since its files ship with the app.
   for 7 days unless it is added to the home screen, and an installed iPhone
   app has storage separate from Safari's: move data across with a backup
   (10.3).
+
+## 14. Phone layout
+
+The same screens adapt below 640 px wide (Tailwind `sm`), down to 375 px,
+with nothing scrolling sideways:
+
+- **Page:** less padding around and inside the card.
+- **Add task:** the title field on its own line; priority and a wide Add
+  button below it.
+- **Totals:** the time format toggle and the report and Excel buttons on one
+  line, the total below them.
+- **Task row:** number and title side by side with the details under the
+  title, so the title gets the width; the start, edit and delete buttons on
+  their own line at the bottom right. The edit form fits the same way.
+- **Statistics:** the Workday hours button wraps under the title; the By task
+  table and the timeline as in 9.2.
+- **Reordering:** on a touch screen, dragging a task starts after a long
+  press (the drag library's default), so a normal swipe scrolls the list.

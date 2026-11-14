@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DayStats, Segment } from "../stats/dayStats";
 import { clock, formatMs } from "../stats/format";
 import type { TimeFormat } from "../utils/time";
@@ -18,6 +18,18 @@ const HOUR = 3_600_000;
  */
 export default function DayTimeline({ stats, colors, timeFormat }: DayTimelineProps) {
   const [hovered, setHovered] = useState<Segment | null>(null);
+  const track = useRef<HTMLDivElement>(null);
+
+  // A tap outside the track hides the details (phones have no mouse leaving).
+  useEffect(() => {
+    if (!hovered) return;
+    const hide = (e: PointerEvent) => {
+      if (!track.current?.contains(e.target as Node)) setHovered(null);
+    };
+    document.addEventListener("pointerdown", hide);
+    return () => document.removeEventListener("pointerdown", hide);
+  }, [hovered]);
+
   if (!stats.span) return null;
 
   // Whole hours around the span, at least one hour wide.
@@ -29,9 +41,24 @@ export default function DayTimeline({ stats, colors, timeFormat }: DayTimelinePr
   const step = hours > 12 ? 3 : hours > 6 ? 2 : 1;
   const ticks = Array.from({ length: Math.floor(hours / step) + 1 }, (_, i) => from + i * step * HOUR);
 
+  /**
+   * A tap anywhere on the track shows the nearest session: a short session
+   * is a bar too thin to hit with a finger.
+   */
+  const pickNearest = (e: React.MouseEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    const at = ((e.clientX - box.left) / box.width) * 100;
+    const distance = (s: Segment) => Math.max(pct(s.start) - at, at - pct(s.end), 0);
+    const nearest = stats.segments.reduce<Segment | null>(
+      (best, s) => (best === null || distance(s) < distance(best) ? s : best),
+      null
+    );
+    setHovered(nearest);
+  };
+
   return (
     <figure className="mb-6" aria-label="Timeline of the day">
-      <div className="relative h-10 rounded-md bg-slate-100">
+      <div ref={track} onClick={pickNearest} className="relative h-10 rounded-md bg-slate-100 cursor-pointer">
         {stats.segments.map((s) => (
           <div
             key={`${s.taskId}-${s.start}`}
@@ -51,8 +78,9 @@ export default function DayTimeline({ stats, colors, timeFormat }: DayTimelinePr
         {hovered && (
           <div
             role="tooltip"
-            className="absolute z-10 -top-2 -translate-y-full -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow"
-            style={{ left: `${(pct(hovered.start) + pct(hovered.end)) / 2}%` }}
+            className="absolute z-10 -top-2 -translate-y-full -translate-x-1/2 w-max max-w-[16rem] rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow"
+            // Kept away from the edges so it stays on a narrow screen.
+            style={{ left: `clamp(8rem, ${(pct(hovered.start) + pct(hovered.end)) / 2}%, calc(100% - 8rem))` }}
           >
             <span
               className="mr-1 inline-block h-2 w-2 rounded-sm"
