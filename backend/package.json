@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
     "build": "tsc",
-    "seed:sample": "node scripts/seed-sample.js"
+    "seed:sample": "node scripts/seed-sample.js",
+    "export:json": "node scripts/export-json.js",
+    "sample:json": "node scripts/seed-sample.js sample.db --replace && node scripts/export-json.js sample.db sample.json --replace"
   },
   "dependencies": {
     "better-sqlite3": "^12.2.0",

@@ -1,10 +1,10 @@
 // Builds a sample database for trying every screen by hand.
 //
 //   cd backend
+//   npm run sample:json                # sample.json, to import in the browser
+//                                      # (Backup > Import backup); see export-json.js
 //   npm run seed:sample                # writes sample.db (refuses to overwrite)
 //   npm run seed:sample -- other.db --replace
-//   $env:TASKS_DB = "sample.db"; npm run dev      (PowerShell)
-//   TASKS_DB=sample.db npm run dev                (bash)
 //
 // Past days use fixed clock times chosen to exercise the statistics rules
 // (workday breaks, lunch, short gaps, evening work, midnight). Today's
