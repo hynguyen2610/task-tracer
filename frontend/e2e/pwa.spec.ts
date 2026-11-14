@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 // The installable, offline web app (docs/SPEC.md 13), on the built app with a
-// phone-sized screen. See playwright.config.ts, project "pwa".
+// phone-sized screen, so in the phone layout (docs/SPEC.md 14). See
+// playwright.config.ts, project "pwa".
 
 const heading = (page: Page) => page.getByRole("heading", { name: "Task Tracker" });
 
@@ -54,6 +55,7 @@ test("opens and keeps working offline once loaded", async ({ page, context }) =>
   await expect(heading(page)).toBeVisible();
 
   // The data is on the device, so tasks still work with no connection.
+  await page.getByRole("button", { name: "Add task" }).click();
   await page.getByPlaceholder("New task title...").fill("Written offline");
   await page.getByRole("button", { name: "➕ Add" }).click();
   await expect(page.getByTestId("task").filter({ hasText: "Written offline" })).toBeVisible();
@@ -64,7 +66,8 @@ test("opens and keeps working offline once loaded", async ({ page, context }) =>
 
 test("asks the browser to keep the data and shows the answer", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /^Backup/ }).click();
+  await page.getByRole("button", { name: /^More actions/ }).click();
+  await page.getByRole("menuitem", { name: /^Backup/ }).click();
   const state = page.getByRole("dialog", { name: "Backup" }).getByTestId("storage-state");
   await expect(state).toContainText(/Storage: (kept by the browser|may be cleared by the browser|unknown)/);
 });

@@ -22,7 +22,8 @@ import WorkdayDialog from "./WorkdayDialog";
 interface StatsScreenProps {
   /** Current tasks, for up-to-date titles. */
   tasks: Task[];
-  onBack: () => void;
+  /** Left out on the phone layout, whose bottom bar goes back. */
+  onBack?: () => void;
 }
 
 /** While today is shown, history is re-read this often so running time grows. */
@@ -99,13 +100,15 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <button
-          onClick={onBack}
-          aria-label="Back to tasks"
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
-        >
-          <ArrowLeft />
-        </button>
+        {onBack && (
+          <button
+            onClick={onBack}
+            aria-label="Back to tasks"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
+          >
+            <ArrowLeft />
+          </button>
+        )}
         <h1 className="text-2xl font-bold text-gray-800">Statistics</h1>
         <button
           onClick={() => setEditingWorkday(true)}

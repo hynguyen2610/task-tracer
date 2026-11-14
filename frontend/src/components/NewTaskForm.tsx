@@ -4,17 +4,20 @@ import { formatReportDate } from "../report/dailyReport";
 import type { Priority, Task } from "../types";
 import { findExactMatch, normalizeTitle, suggestTasks } from "../utils/taskMatch";
 import OptionSelect from "./OptionSelect";
+import ChipGroup from "./phone/ChipGroup";
 
 interface NewTaskFormProps {
   /** Existing tasks, to suggest similar titles and offer their start date. */
   tasks: Task[];
   onAdd: (title: string, priority: Priority, startedAt?: number) => Promise<void>;
+  /** The phone layout's add sheet: the keyboard opens at once, priority is chips. */
+  phone?: boolean;
 }
 
 const startLabel = (task: Task) =>
   task.startedAt ? `started ${formatReportDate(new Date(task.startedAt))}` : "not started";
 
-export default function NewTaskForm({ tasks, onAdd }: NewTaskFormProps) {
+export default function NewTaskForm({ tasks, onAdd, phone = false }: NewTaskFormProps) {
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>(DEFAULT_PRIORITY);
   const [listOpen, setListOpen] = useState(false);
@@ -71,12 +74,14 @@ export default function NewTaskForm({ tasks, onAdd }: NewTaskFormProps) {
   };
 
   return (
-    <div className="mb-6">
-      {/* On a phone the title gets its own line; priority and Add go below. */}
-      <div className="flex flex-wrap gap-2">
+    <div className={phone ? "" : "mb-6"}>
+      {/* On a narrow screen the title gets its own line; priority and Add go below. */}
+      <div className={phone ? "flex flex-col gap-3" : "flex flex-wrap gap-2"}>
         <div className="relative basis-full sm:basis-0 sm:flex-1">
           <input
             ref={inputRef}
+            autoFocus={phone}
+            enterKeyHint="done"
             type="text"
             value={title}
             onChange={(e) => {
@@ -94,7 +99,9 @@ export default function NewTaskForm({ tasks, onAdd }: NewTaskFormProps) {
             aria-activedescendant={
               showList && highlighted >= 0 ? `${listId}-${highlighted}` : undefined
             }
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className={`w-full border rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+              phone ? "h-12 text-base" : "py-2"
+            }`}
           />
           {showList && (
             <ul
@@ -128,15 +135,21 @@ export default function NewTaskForm({ tasks, onAdd }: NewTaskFormProps) {
             </ul>
           )}
         </div>
-        <OptionSelect
-          value={priority}
-          options={PRIORITIES}
-          onChange={setPriority}
-          className="border rounded-lg px-2 py-2"
-        />
+        {phone ? (
+          <ChipGroup label="Priority" value={priority} options={PRIORITIES} onChange={setPriority} />
+        ) : (
+          <OptionSelect
+            value={priority}
+            options={PRIORITIES}
+            onChange={setPriority}
+            className="border rounded-lg px-2 py-2"
+          />
+        )}
         <button
           onClick={submit}
-          className="flex-1 sm:flex-none px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          className={`px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition ${
+            phone ? "h-12 font-medium" : "flex-1 sm:flex-none py-2"
+          }`}
         >
           ➕ Add
         </button>

@@ -25,3 +25,8 @@ export const STATUS_COLORS: Partial<Record<Status, string>> = {
 export function canStart(status: Status): boolean {
   return status === "Todo" || status === "In progress";
 }
+
+/** Done and Canceled tasks are finished: the phone layout folds them away. */
+export function isFinished(task: { status: Status }): boolean {
+  return task.status === "Done" || task.status === "Canceled";
+}

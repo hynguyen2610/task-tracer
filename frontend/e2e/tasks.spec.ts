@@ -488,8 +488,9 @@ test.describe("layout", () => {
     expect((await meta.boundingBox())!.y).toBeCloseTo((await status.boundingBox())!.y, -1);
   });
 
+  // The narrowest desktop layout; below 640px is the phone layout (mobile.spec.ts).
   test("wraps a long title on a narrow screen without scrolling sideways", async ({ page }) => {
-    await page.setViewportSize({ width: 480, height: 900 });
+    await page.setViewportSize({ width: 640, height: 900 });
     const row = await addTask(page, longTitle("Narrow"));
     expect(await titleLines(row)).toBeGreaterThan(1);
     const overflow = await page.evaluate(
@@ -498,7 +499,7 @@ test.describe("layout", () => {
     expect(overflow).toBeLessThanOrEqual(0);
     // The buttons stay inside the screen (the row may be below the fold).
     const del = (await row.getByRole("button", { name: "Delete task" }).boundingBox())!;
-    expect(del.x + del.width).toBeLessThanOrEqual(480);
+    expect(del.x + del.width).toBeLessThanOrEqual(640);
   });
 });
 

@@ -2,15 +2,18 @@ import { useState } from "react";
 import { BarChart3, HardDriveDownload } from "lucide-react";
 import "./App.css";
 import { BACKUP_REMINDER_DAYS, canBackup, lastBackupAt } from "./api/backup";
+import { useIsPhone } from "./hooks/useIsPhone";
 import { useTasks } from "./hooks/useTasks";
 import { TimeFormatContext, useTimeFormatSetting } from "./hooks/useTimeFormat";
 import BackupDialog from "./components/BackupDialog";
 import NewTaskForm from "./components/NewTaskForm";
+import PhoneLayout from "./components/phone/PhoneLayout";
 import StatsScreen from "./components/StatsScreen";
 import TaskList from "./components/TaskList";
 import TasksSummary from "./components/TasksSummary";
 
 export default function App() {
+  const taskState = useTasks();
   const {
     tasks,
     addTask,
@@ -20,7 +23,8 @@ export default function App() {
     setStatus,
     deleteTask,
     moveTask,
-  } = useTasks();
+  } = taskState;
+  const isPhone = useIsPhone();
   const { format, setFormat } = useTimeFormatSetting();
   const [screen, setScreen] = useState<"tasks" | "stats">("tasks");
   const [backupOpen, setBackupOpen] = useState(false);
@@ -31,15 +35,36 @@ export default function App() {
   const backupDue =
     canBackup() && hasWork && (lastBackup === null || now - lastBackup > BACKUP_REMINDER_DAYS * 86_400_000);
 
+  const backupDialog = backupOpen && (
+    <BackupDialog onClose={() => setBackupOpen(false)} onExported={() => setLastBackup(lastBackupAt())} />
+  );
+
+  if (isPhone) {
+    return (
+      <TimeFormatContext.Provider value={format}>
+        <PhoneLayout
+          tasks={taskState}
+          screen={screen}
+          onScreen={setScreen}
+          onTimeFormatChange={setFormat}
+          backupDue={backupDue}
+          onOpenBackup={() => setBackupOpen(true)}
+        />
+        {backupDialog}
+      </TimeFormatContext.Provider>
+    );
+  }
+
+  // Desktop and tablet: one card (docs/SPEC.md 14 for the phone layout).
   return (
     <TimeFormatContext.Provider value={format}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-2 sm:p-8">
-        <div className="w-full max-w-7xl bg-white rounded-2xl shadow-xl p-4 sm:p-6 relative">
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-8">
+        <div className="w-full max-w-7xl bg-white rounded-2xl shadow-xl p-6 relative">
           {screen === "stats" ? (
             <StatsScreen tasks={tasks} onBack={() => setScreen("tasks")} />
           ) : (
             <>
-              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2">
+              <div className="absolute top-4 right-4 flex gap-2">
                 {canBackup() && (
                   <button
                     onClick={() => setBackupOpen(true)}
@@ -80,9 +105,7 @@ export default function App() {
           )}
         </div>
       </div>
-      {backupOpen && (
-        <BackupDialog onClose={() => setBackupOpen(false)} onExported={() => setLastBackup(lastBackupAt())} />
-      )}
+      {backupDialog}
     </TimeFormatContext.Provider>
   );
 }

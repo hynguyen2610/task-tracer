@@ -531,18 +531,39 @@ the service worker there, since its files ship with the app.
 
 ## 14. Phone layout
 
-The same screens adapt below 640 px wide (Tailwind `sm`), down to 375 px,
-with nothing scrolling sideways:
+Below 640 px wide (Tailwind `sm`), down to 375 px, the app switches to a
+layout of its own, with nothing scrolling sideways. Wider screens keep the
+card layout above, unchanged.
 
-- **Page:** less padding around and inside the card.
-- **Add task:** the title field on its own line; priority and a wide Add
-  button below it.
-- **Totals:** the time format toggle and the report and Excel buttons on one
-  line, the total below them.
-- **Task row:** number and title side by side with the details under the
-  title, so the title gets the width; the start, edit and delete buttons on
-  their own line at the bottom right. The edit form fits the same way.
-- **Statistics:** the Workday hours button wraps under the title; the By task
-  table and the timeline as in 9.2.
-- **Reordering:** on a touch screen, dragging a task starts after a long
-  press (the drag library's default), so a normal swipe scrolls the list.
+- **Page:** edge to edge on a light grey background, 16 px side margins, no
+  card. A header stays at the top with the title and a **More actions** (⋯)
+  menu: Daily report, Export to Excel and Backup. The backup reminder dot
+  (10.3) shows on the ⋯ button and next to Backup.
+- **Running task:** while a task runs, a bar under the header shows its
+  title, its time in large digits and a large Pause button.
+- **Totals:** one line with the total of all tasks and the time format
+  toggle.
+- **Task card:** the title in full on the first line, between a drag handle
+  and a ⋮ menu (Edit task, Delete task). Below it, chips for the status, the
+  priority (with its colour dot) and the start date, then the status note.
+  The last line has the time in large digits and one Start/Pause button of
+  48 px. The card keeps the row colours of 4.5. Editing opens the edit form
+  in the card, with a full-width Save button.
+- **Status:** tapping the status chip opens a sheet from the bottom listing
+  the five statuses; a tap picks one and closes it.
+- **Finished tasks:** Done and Canceled tasks move to a **Finished (n)**
+  section under the open ones, folded by default. They can't be dragged.
+- **Reordering:** only by a card's handle (keyboard too: Space, arrows,
+  Space), so a swipe on the card scrolls the list. Open tasks move among
+  themselves; finished tasks keep their place in the saved order (6).
+- **Add task:** a round ＋ button at the bottom right opens a sheet with the
+  title field (focused, so the keyboard opens), priority chips and an Add
+  button. Suggestions and the start date offer work as in 6.1. The sheet
+  closes after adding, and moves up above the on-screen keyboard.
+- **Screens:** a bottom bar switches between Tasks and Statistics; the
+  Statistics screen has no back arrow there. On Statistics the Workday hours
+  button wraps under the title; the By task table and the timeline as in 9.2.
+- **Notch and home indicator:** the page uses `viewport-fit=cover`, and the
+  header and bottom bar are padded by the safe-area insets.
+- **Dialogs:** the report, backup, workday and task history dialogs are the
+  same as on wide screens and fit the width.

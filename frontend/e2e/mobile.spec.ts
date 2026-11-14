@@ -1,54 +1,130 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// The app on a small phone (iPhone SE size, touch), on the dev server. See
-// playwright.config.ts, project "phone". Nothing may need sideways scrolling,
-// and titles get the width of the screen.
+// The phone layout (docs/SPEC.md 14) on a small phone (iPhone SE size, touch),
+// on the dev server. See playwright.config.ts, project "phone".
 
 const sideways = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-async function addTask(page: Page, title: string) {
-  await page.getByPlaceholder("New task title...").fill(title);
-  await page.getByRole("button", { name: "➕ Add" }).click();
-  await expect(page.getByTestId("task").filter({ hasText: title })).toBeVisible();
-  // Pin the row by its id, so it still matches while the title is being
-  // edited (an input's value isn't text).
-  const id = await page.getByTestId("task").filter({ hasText: title }).getAttribute("data-rfd-draggable-id");
-  return page.locator(`[data-testid="task"][data-rfd-draggable-id="${id}"]`);
+const card = (page: Page, title: string) => page.getByTestId("task").filter({ hasText: title });
+
+/** Adds a task from the add sheet; returns its card, pinned by id so it survives edits. */
+async function addTask(page: Page, title: string, priority?: string) {
+  await page.getByRole("button", { name: "Add task" }).tap();
+  const sheet = page.getByRole("dialog", { name: "New task" });
+  await expect(sheet.getByPlaceholder("New task title...")).toBeFocused();
+  await sheet.getByPlaceholder("New task title...").fill(title);
+  if (priority) await sheet.getByRole("radio", { name: priority, exact: true }).tap();
+  await sheet.getByRole("button", { name: "➕ Add" }).tap();
+  await expect(sheet).toHaveCount(0);
+  await expect(card(page, title)).toBeVisible();
+  const id = await card(page, title).getAttribute("data-task-id");
+  return page.locator(`[data-testid="task"][data-task-id="${id}"]`);
 }
+
+const titles = (page: Page) =>
+  page.getByTestId("task").evaluateAll((cards) => cards.map((c) => c.querySelector("p")!.textContent));
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Task Tracker" })).toBeVisible();
 });
 
-test("the task list fits the screen and titles get its width", async ({ page }) => {
-  const row = await addTask(page, "Review the quarterly time tracking export");
+test("a card gives the title the width and the time and main button their own line", async ({ page }) => {
+  const row = await addTask(page, "Review the quarterly time tracking export", "High");
   expect(await sideways(page)).toBeLessThanOrEqual(0);
 
-  // The title isn't squeezed beside the buttons: it uses most of the row.
   const title = (await row.locator("p").first().boundingBox())!;
   const box = (await row.boundingBox())!;
-  expect(title.width).toBeGreaterThan(box.width * 0.6);
-  // The buttons sit on their own line under the details.
-  const del = (await row.getByRole("button", { name: "Delete task" }).boundingBox())!;
-  expect(del.y).toBeGreaterThan(title.y + title.height);
-  expect(del.x + del.width).toBeLessThanOrEqual(box.x + box.width);
+  // Only the drag handle and the menu button share its line.
+  expect(title.width).toBeGreaterThan(box.width - 100);
+  await expect(row.getByRole("button", { name: "Status: Todo" })).toBeVisible();
+  await expect(row).toContainText("High");
+  // One big Start button under the title, at least 44px for a thumb.
+  const start = (await row.getByRole("button", { name: "Start" }).boundingBox())!;
+  expect(start.y).toBeGreaterThan(title.y + title.height);
+  expect(start.height).toBeGreaterThanOrEqual(44);
+  // Edit and Delete wait in the card's menu.
+  await expect(row.getByRole("button", { name: "Edit task" })).toHaveCount(0);
 });
 
-test("the edit form fits the screen", async ({ page }) => {
+test("the running task is pinned at the top and can be paused from there", async ({ page }) => {
+  const title = "Timed on a phone";
+  const row = await addTask(page, title);
+  const bar = page.getByRole("region", { name: "Running task" });
+  await expect(bar).toHaveCount(0);
+
+  await row.getByRole("button", { name: "Start" }).tap();
+  await expect(bar).toContainText(title);
+  await expect(bar).toContainText(/00:00:0[1-9]/, { timeout: 10_000 });
+  await bar.getByRole("button", { name: "Pause" }).tap();
+  await expect(bar).toHaveCount(0);
+  await expect(row.getByRole("button", { name: "Start" })).toBeVisible();
+});
+
+test("the card menu edits and deletes", async ({ page }) => {
   const row = await addTask(page, "Edit me on a phone");
-  await row.getByRole("button", { name: "Edit task" }).tap();
-  await expect(row.getByRole("button", { name: "Save task" })).toBeVisible();
+  await row.getByRole("button", { name: "Task actions" }).tap();
+  await page.getByRole("menuitem", { name: "Edit task" }).tap();
+  const input = row.getByRole("textbox").first();
+  await expect(input).toBeVisible();
   expect(await sideways(page)).toBeLessThanOrEqual(0);
+  await input.fill("Edited on a phone");
   await row.getByRole("button", { name: "Save task" }).tap();
+  await expect(row.locator("p").first()).toHaveText("Edited on a phone");
+
+  await row.getByRole("button", { name: "Task actions" }).tap();
+  await page.getByRole("menuitem", { name: "Delete task" }).tap();
+  await expect(card(page, "Edited on a phone")).toHaveCount(0);
 });
 
-test("dialogs fit the screen", async ({ page }) => {
+test("the status chip opens a picker, and finished tasks fold away", async ({ page }) => {
+  const row = await addTask(page, "Finish me");
+  await row.getByRole("button", { name: "Status: Todo" }).tap();
+  const sheet = page.getByRole("dialog", { name: "Status" });
+  await expect(sheet.getByRole("radio", { name: "Todo" })).toHaveAttribute("aria-checked", "true");
+  await sheet.getByRole("radio", { name: "Done" }).tap();
+  await expect(sheet).toHaveCount(0);
+
+  const finished = page.getByRole("button", { name: "Finished (1)" });
+  await expect(finished).toHaveAttribute("aria-expanded", "false");
+  await expect(row).toHaveCount(0);
+  await finished.tap();
+  await expect(row.getByRole("button", { name: "Status: Done" })).toBeVisible();
+});
+
+test("open tasks reorder by their handle and finished tasks stay put", async ({ page }) => {
+  await addTask(page, "Second");
+  const done = await addTask(page, "Already done");
+  await addTask(page, "Fourth");
+  await done.getByRole("button", { name: "Status: Todo" }).tap();
+  await page.getByRole("dialog", { name: "Status" }).getByRole("radio", { name: "Done" }).tap();
+  await expect.poll(() => titles(page)).toEqual(["First task of the day", "Second", "Fourth"]);
+
+  // Keyboard dragging, as touch dragging can't be scripted reliably.
+  const handle = card(page, "Fourth").getByLabel("Drag to reorder");
+  await handle.focus();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Space");
+  await expect.poll(() => titles(page)).toEqual(["Fourth", "First task of the day", "Second"]);
+
+  // The stored order moved Fourth to the top and left the finished task where it was.
+  await page.reload();
+  await page.getByRole("button", { name: "Finished (1)" }).tap();
+  await expect.poll(() => titles(page)).toEqual(["Fourth", "First task of the day", "Second", "Already done"]);
+});
+
+test("the more menu opens the report and backup, and they fit the screen", async ({ page }) => {
   await addTask(page, "Report on a phone");
-  for (const name of ["Daily report", /^Backup/]) {
-    await page.getByRole("button", { name }).tap();
-    const dialog = page.getByRole("dialog");
+  for (const [item, dialogName] of [
+    ["Daily report", /report/i],
+    [/^Backup/, "Backup"],
+  ] as const) {
+    await page.getByRole("button", { name: /^More actions/ }).tap();
+    await page.getByRole("menuitem", { name: item }).tap();
+    const dialog = page.getByRole("dialog", { name: dialogName });
     await expect(dialog).toBeVisible();
     expect(await sideways(page)).toBeLessThanOrEqual(0);
     await dialog.getByRole("button", { name: "Close" }).tap();
@@ -56,19 +132,20 @@ test("dialogs fit the screen", async ({ page }) => {
   }
 });
 
-test("statistics fit the screen and a tap on the timeline shows the details", async ({ page }) => {
-  const title = "Timed on a phone";
+test("statistics open from the bottom bar and a tap on the timeline shows the details", async ({ page }) => {
+  const title = "Timed for stats";
   const row = await addTask(page, title);
   await row.getByRole("button", { name: "Start" }).tap();
-  await expect(row).toContainText(/Total Time: 00:00:0[1-9]/, { timeout: 10_000 });
+  await expect(row.getByTestId("task-time")).toHaveText(/00:00:0[1-9]/, { timeout: 10_000 });
   await row.getByRole("button", { name: "Pause" }).tap();
 
-  await page.getByRole("button", { name: "Statistics" }).tap();
+  await page.getByRole("navigation", { name: "Screens" }).getByRole("button", { name: "Statistics" }).tap();
   await expect(page.getByRole("heading", { name: "Statistics" })).toBeVisible();
   expect(await sideways(page)).toBeLessThanOrEqual(0);
 
   // The session is a bar a few pixels wide; a tap near it is enough.
   const track = page.getByRole("figure", { name: "Timeline of the day" }).locator("div").first();
+  await track.scrollIntoViewIfNeeded();
   const bar = (await page.getByTestId("timeline-segment").first().boundingBox())!;
   const trackBox = (await track.boundingBox())!;
   const x = Math.min(bar.x + 20, trackBox.x + trackBox.width - 1) - trackBox.x;
@@ -82,4 +159,7 @@ test("statistics fit the screen and a tap on the timeline shows the details", as
   // A tap elsewhere hides it.
   await page.getByRole("heading", { name: "By task" }).tap();
   await expect(tip).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Tasks", exact: true }).tap();
+  await expect(card(page, title)).toBeVisible();
 });
