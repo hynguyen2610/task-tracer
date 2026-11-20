@@ -562,8 +562,9 @@ card layout above, unchanged.
 - **Page:** edge to edge on a light grey background, 16 px side margins, no
   card. A header stays at the top with the title and a **Backup** button,
   which shows the backup reminder dot (10.3).
-- **Running task:** while a task runs, a bar under the header shows its
-  title, its time in large digits and a large Pause button.
+- **Running task:** starting or pausing a task changes only that card's
+  Start/Pause button and its glow; nothing appears, disappears or moves
+  elsewhere on the page.
 - **Totals:** one line with the total of all tasks and the time format
   toggle.
 - **Task card:** the title in full on the first line, between a drag handle

@@ -5,7 +5,6 @@ import { useTimeFormat } from "../../hooks/useTimeFormat";
 import type { useTasks } from "../../hooks/useTasks";
 import { formatDuration, type TimeFormat } from "../../utils/time";
 import NewTaskForm from "../NewTaskForm";
-import PlayPauseButton from "../PlayPauseButton";
 import ReportDialog from "../ReportDialog";
 import StatsScreen from "../StatsScreen";
 import TimeFormatToggle from "../TimeFormatToggle";
@@ -23,9 +22,9 @@ interface PhoneLayoutProps {
 }
 
 /**
- * The app below 640px wide (docs/SPEC.md 14): edge to edge, the running task
- * pinned at the top, and Tasks, Report and Statistics always in thumb reach
- * at the bottom.
+ * The app below 640px wide (docs/SPEC.md 14): edge to edge, a layout that
+ * stays put when a task starts or pauses, and Tasks, Report and Statistics
+ * always in thumb reach at the bottom.
  */
 export default function PhoneLayout({
   tasks: t,
@@ -39,7 +38,6 @@ export default function PhoneLayout({
   const timeFormat = useTimeFormat();
   const [adding, setAdding] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const running = t.tasks.find((task) => task.isRunning);
   const total = t.tasks.reduce((sum, task) => sum + task.totalSeconds, 0);
 
   const navClass = (current: boolean) =>
@@ -84,25 +82,6 @@ export default function PhoneLayout({
             )}
           </div>
         </div>
-
-        {screen === "tasks" && running && (
-          <div
-            role="region"
-            aria-label="Running task"
-            className="flex items-center gap-3 border-t bg-accent px-4 py-2 text-on-color"
-          >
-            <span className="h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full bg-live" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm opacity-90">{running.title}</p>
-              <p className="text-xl font-semibold tabular-nums">{formatDuration(running.totalSeconds, timeFormat)}</p>
-            </div>
-            <PlayPauseButton
-              isRunning
-              onClick={() => t.pauseTask(running.id)}
-              className="!h-12 !w-12 ring-2 ring-on-color/70"
-            />
-          </div>
-        )}
       </header>
 
       {screen === "stats" ? (

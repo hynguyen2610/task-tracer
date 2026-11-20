@@ -48,18 +48,18 @@ test("a card gives the title the width and the time and main button their own li
   await expect(row.getByRole("button", { name: "Edit task" })).toHaveCount(0);
 });
 
-test("the running task is pinned at the top and can be paused from there", async ({ page }) => {
-  const title = "Timed on a phone";
-  const row = await addTask(page, title);
-  const bar = page.getByRole("region", { name: "Running task" });
-  await expect(bar).toHaveCount(0);
+test("starting and pausing a task leaves the layout where it was", async ({ page }) => {
+  const row = await addTask(page, "Timed on a phone");
+  const before = (await row.boundingBox())!;
 
   await row.getByRole("button", { name: "Start" }).tap();
-  await expect(bar).toContainText(title);
-  await expect(bar).toContainText(/00:00:0[1-9]/, { timeout: 10_000 });
-  await bar.getByRole("button", { name: "Pause" }).tap();
-  await expect(bar).toHaveCount(0);
+  await expect(row.getByTestId("task-time")).toHaveText(/00:00:0[1-9]/, { timeout: 10_000 });
+  expect((await row.boundingBox())!.y).toBe(before.y);
+  await expect(page.getByRole("button", { name: "Pause" })).toHaveCount(1);
+
+  await row.getByRole("button", { name: "Pause" }).tap();
   await expect(row.getByRole("button", { name: "Start" })).toBeVisible();
+  expect((await row.boundingBox())!.y).toBe(before.y);
 });
 
 test("the card menu edits and deletes", async ({ page }) => {
