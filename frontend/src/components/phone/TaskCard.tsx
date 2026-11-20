@@ -2,6 +2,7 @@ import type { DraggableProvided } from "@hello-pangea/dnd";
 import { ChevronDown, Edit2, GripVertical, MoreVertical, Trash2 } from "lucide-react";
 import { PRIORITY_COLORS } from "../../constants/priority";
 import { STATUS_COLORS, canStart } from "../../constants/status";
+import { useJustBecame } from "../../theme/moments";
 import { useTaskEditing } from "../../hooks/useTaskEditing";
 import { useTimeFormat } from "../../hooks/useTimeFormat";
 import { formatReportDate } from "../../report/dailyReport";
@@ -16,6 +17,10 @@ interface TaskCardProps {
   /** Set while the card is in the reorderable list; finished tasks have none. */
   drag?: DraggableProvided;
   isEditing: boolean;
+  /** Just added: the theme may animate its arrival (docs/SPEC.md 15). */
+  isNew?: boolean;
+  /** Just set to Done, as seen by the list (its card is drawn anew when it moves). */
+  justDone?: boolean;
   onStartEdit: () => void;
   onSave: (changes: TaskChanges) => Promise<void>;
   onToggle: () => void;
@@ -39,6 +44,8 @@ export default function TaskCard({
   task,
   drag,
   isEditing,
+  isNew = false,
+  justDone: justDoneInList = false,
   onStartEdit,
   onSave,
   onToggle,
@@ -48,12 +55,15 @@ export default function TaskCard({
 }: TaskCardProps) {
   const { draft, setDraft, startEditing, save } = useTaskEditing(task, onPause, onStartEdit, onSave);
   const timeFormat = useTimeFormat();
+  const justDone = useJustBecame(task.status === "Done") || justDoneInList;
 
   return (
     <div
       ref={drag?.innerRef}
       {...drag?.draggableProps}
       data-testid="task"
+      data-new={isNew || undefined}
+      data-just-done={justDone || undefined}
       data-task-id={task.id}
       className={`rounded-xl p-3 shadow-sm ${STATUS_COLORS[task.status] ?? PRIORITY_COLORS[task.priority]} ${
         task.isRunning ? "glow" : ""

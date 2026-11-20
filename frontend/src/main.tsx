@@ -4,7 +4,11 @@ import { isTauri } from '@tauri-apps/api/core'
 import { registerSW } from 'virtual:pwa-register'
 import { requestPersistentStorage } from './api/storage'
 import './index.css'
+import '@fontsource-variable/space-grotesk'
+import { applyTheme, savedTheme } from './theme/themes'
 import App from './App.tsx'
+
+applyTheme(savedTheme())
 
 // Installable, offline web app (docs/SPEC.md 13). Not in the desktop app:
 // its files come with the app, and a cached copy would hide updates.

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, HardDriveDownload } from "lucide-react";
+import { BarChart3, HardDriveDownload, Palette } from "lucide-react";
 import "./App.css";
 import { BACKUP_REMINDER_DAYS, canBackup, lastBackupAt } from "./api/backup";
 import { useIsPhone } from "./hooks/useIsPhone";
@@ -9,6 +9,7 @@ import BackupDialog from "./components/BackupDialog";
 import NewTaskForm from "./components/NewTaskForm";
 import PhoneLayout from "./components/phone/PhoneLayout";
 import StatsScreen from "./components/StatsScreen";
+import ThemePicker from "./components/ThemePicker";
 import TaskList from "./components/TaskList";
 import TasksSummary from "./components/TasksSummary";
 
@@ -28,6 +29,7 @@ export default function App() {
   const { format, setFormat } = useTimeFormatSetting();
   const [screen, setScreen] = useState<"tasks" | "stats">("tasks");
   const [backupOpen, setBackupOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const [lastBackup, setLastBackup] = useState(lastBackupAt);
   const [now] = useState(Date.now);
   // Remind once there is work worth keeping and no recent backup.
@@ -35,8 +37,13 @@ export default function App() {
   const backupDue =
     canBackup() && hasWork && (lastBackup === null || now - lastBackup > BACKUP_REMINDER_DAYS * 86_400_000);
 
-  const backupDialog = backupOpen && (
-    <BackupDialog onClose={() => setBackupOpen(false)} onExported={() => setLastBackup(lastBackupAt())} />
+  const dialogs = (
+    <>
+      {backupOpen && (
+        <BackupDialog onClose={() => setBackupOpen(false)} onExported={() => setLastBackup(lastBackupAt())} />
+      )}
+      {themeOpen && <ThemePicker onClose={() => setThemeOpen(false)} />}
+    </>
   );
 
   if (isPhone) {
@@ -49,8 +56,9 @@ export default function App() {
           onTimeFormatChange={setFormat}
           backupDue={backupDue}
           onOpenBackup={() => setBackupOpen(true)}
+          onOpenTheme={() => setThemeOpen(true)}
         />
-        {backupDialog}
+        {dialogs}
       </TimeFormatContext.Provider>
     );
   }
@@ -58,13 +66,21 @@ export default function App() {
   // Desktop and tablet: one card (docs/SPEC.md 14 for the phone layout).
   return (
     <TimeFormatContext.Provider value={format}>
-      <div className="min-h-screen bg-gradient-to-br from-page to-page-deep flex justify-center items-start p-8">
+      <div className="app-bg min-h-screen bg-gradient-to-br from-page to-page-deep flex justify-center items-start p-8">
         <div className="w-full max-w-7xl bg-surface rounded-2xl shadow-xl p-6 relative">
           {screen === "stats" ? (
             <StatsScreen tasks={tasks} onBack={() => setScreen("tasks")} />
           ) : (
             <>
               <div className="absolute top-4 right-4 flex gap-2">
+                <button
+                  onClick={() => setThemeOpen(true)}
+                  aria-label="Theme"
+                  title="Theme"
+                  className="w-10 h-10 flex items-center justify-center rounded-full border border-line text-fg hover:bg-fill transition"
+                >
+                  <Palette size={20} />
+                </button>
                 {canBackup() && (
                   <button
                     onClick={() => setBackupOpen(true)}
@@ -94,6 +110,7 @@ export default function App() {
               <TasksSummary tasks={tasks} onTimeFormatChange={setFormat} />
               <TaskList
                 tasks={tasks}
+                loaded={taskState.loaded}
                 onToggle={toggleTask}
                 onPause={pauseTask}
                 onDelete={deleteTask}
@@ -105,7 +122,7 @@ export default function App() {
           )}
         </div>
       </div>
-      {backupDialog}
+      {dialogs}
     </TimeFormatContext.Provider>
   );
 }

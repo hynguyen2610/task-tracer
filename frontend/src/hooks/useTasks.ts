@@ -7,9 +7,12 @@ const POLL_INTERVAL_MS = 1000;
 /** Task list state, kept fresh by polling the backend every second. */
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  /** False until the first read, so an empty list is known to be really empty. */
+  const [loaded, setLoaded] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     setTasks(await api.getTasks());
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export function useTasks() {
 
   return {
     tasks,
+    loaded,
     addTask,
     toggleTask,
     pauseTask,

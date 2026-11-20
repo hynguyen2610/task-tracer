@@ -217,7 +217,7 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
         {tab === "preview" ? (
           <div role="tabpanel" aria-label="Preview">
             {summary}
-            {preview("mt-4")}
+            {preview("mt-4 rounded-lg p-3")}
           </div>
         ) : (
           <div role="tabpanel" aria-label="Edit" className="-mt-3">

@@ -13,6 +13,17 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Tasks" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+      // The saved theme (docs/SPEC.md 15), before the first paint; see src/theme/themes.ts.
+      try {
+        var bars = { classic: "#4f46e5", midnight: "#0a0f1e" };
+        var theme = localStorage.getItem("theme");
+        if (bars[theme]) {
+          document.documentElement.dataset.theme = theme;
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", bars[theme]);
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -6,6 +6,7 @@ import type { Status, Task, TaskChanges } from "../types";
 import { formatDuration } from "../utils/time";
 import { formatReportDate } from "../report/dailyReport";
 import { useTimeFormat } from "../hooks/useTimeFormat";
+import { useJustBecame } from "../theme/moments";
 import { useTaskEditing } from "../hooks/useTaskEditing";
 import OptionSelect from "./OptionSelect";
 import PlayPauseButton from "./PlayPauseButton";
@@ -15,6 +16,8 @@ interface TaskItemProps {
   task: Task;
   index: number;
   isEditing: boolean;
+  /** Just added: the theme may animate its arrival (docs/SPEC.md 15). */
+  isNew?: boolean;
   onStartEdit: () => void;
   onSave: (changes: TaskChanges) => Promise<void>;
   onToggle: () => void;
@@ -27,6 +30,7 @@ export default function TaskItem({
   task,
   index,
   isEditing,
+  isNew = false,
   onStartEdit,
   onSave,
   onToggle,
@@ -36,6 +40,7 @@ export default function TaskItem({
 }: TaskItemProps) {
   const { draft, setDraft, startEditing, save } = useTaskEditing(task, onPause, onStartEdit, onSave);
   const timeFormat = useTimeFormat();
+  const justDone = useJustBecame(task.status === "Done");
 
   return (
     <Draggable draggableId={task.id.toString()} index={index}>
@@ -45,6 +50,8 @@ export default function TaskItem({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           data-testid="task"
+          data-new={isNew || undefined}
+          data-just-done={justDone || undefined}
           className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 rounded-xl shadow-sm ${
             STATUS_COLORS[task.status] ?? PRIORITY_COLORS[task.priority]
           } ${task.isRunning ? "glow border-primary" : ""}`}

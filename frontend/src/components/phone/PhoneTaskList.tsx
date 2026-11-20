@@ -5,9 +5,12 @@ import { STATUSES, isFinished } from "../../constants/status";
 import type { Status, Task, TaskChanges } from "../../types";
 import BottomSheet from "./BottomSheet";
 import TaskCard from "./TaskCard";
+import { useNewIds } from "../../theme/moments";
 
 interface PhoneTaskListProps {
   tasks: Task[];
+  /** Whether the list has been read yet (see useTasks). */
+  loaded: boolean;
   onToggle: (id: number) => void;
   onPause: (id: number) => Promise<Task | undefined>;
   onDelete: (id: number) => void;
@@ -22,6 +25,7 @@ interface PhoneTaskListProps {
  */
 export default function PhoneTaskList({
   tasks,
+  loaded,
   onToggle,
   onPause,
   onDelete,
@@ -34,7 +38,12 @@ export default function PhoneTaskList({
   const [showFinished, setShowFinished] = useState(false);
 
   const open = tasks.filter((t) => !isFinished(t));
+  const newIds = useNewIds(tasks.map((t) => t.id), loaded);
   const finished = tasks.filter(isFinished);
+  // A task set to Done moves to the finished section, so its card is drawn
+  // anew there: the list marks the moment (and the section's header) instead.
+  const justFinished = useNewIds(finished.map((t) => t.id), loaded);
+  const anyJustDone = finished.some((t) => justFinished.has(t.id) && t.status === "Done");
 
   // Positions are in the open list; the stored order is the whole list. Moving
   // onto another open task's place in the whole list keeps finished tasks put.
@@ -50,6 +59,8 @@ export default function PhoneTaskList({
       task={task}
       drag={drag}
       isEditing={editingId === task.id}
+      isNew={newIds.has(task.id)}
+      justDone={justFinished.has(task.id) && task.status === "Done"}
       onStartEdit={() => setEditingId(task.id)}
       onSave={async (changes) => {
         await onUpdate(task.id, changes);
@@ -88,6 +99,7 @@ export default function PhoneTaskList({
           <button
             onClick={() => setShowFinished((s) => !s)}
             aria-expanded={showFinished}
+            data-just-done={anyJustDone || undefined}
             className="flex w-full items-center gap-1 py-2 text-sm font-semibold text-fg-soft"
           >
             <ChevronRight size={18} className={`transition-transform ${showFinished ? "rotate-90" : ""}`} />

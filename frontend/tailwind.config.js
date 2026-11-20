@@ -59,6 +59,8 @@ export default {
       // The report preview looks like the email in every theme.
       email: { paper: role("email-paper"), ink: role("email-ink") },
     },
+    // Each theme sets its fonts (src/theme/effects.css).
+    fontFamily: { sans: "var(--font-body)", display: "var(--font-display)", mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" },
     extend: {
       // `border` with no colour, and `divide-*`
       borderColor: { DEFAULT: role("line-soft") },

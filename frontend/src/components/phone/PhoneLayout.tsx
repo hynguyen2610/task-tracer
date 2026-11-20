@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, HardDriveDownload, ListTodo, Mail, Plus } from "lucide-react";
+import { BarChart3, HardDriveDownload, ListTodo, Mail, Palette, Plus } from "lucide-react";
 import { canBackup } from "../../api/backup";
 import { useTimeFormat } from "../../hooks/useTimeFormat";
 import type { useTasks } from "../../hooks/useTasks";
@@ -19,6 +19,7 @@ interface PhoneLayoutProps {
   onTimeFormatChange: (format: TimeFormat) => void;
   backupDue: boolean;
   onOpenBackup: () => void;
+  onOpenTheme: () => void;
 }
 
 /**
@@ -33,6 +34,7 @@ export default function PhoneLayout({
   onTimeFormatChange,
   backupDue,
   onOpenBackup,
+  onOpenTheme,
 }: PhoneLayoutProps) {
   const timeFormat = useTimeFormat();
   const [adding, setAdding] = useState(false);
@@ -56,22 +58,31 @@ export default function PhoneLayout({
   );
 
   return (
-    <div className="min-h-screen bg-page pb-[calc(4rem+env(safe-area-inset-bottom))]">
+    <div className="app-bg min-h-screen bg-page pb-[calc(4rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-30 border-b bg-surface/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="flex h-14 items-center justify-between px-4">
           <h1 className="text-xl font-bold text-fg-strong">Task Tracker</h1>
-          {canBackup() && (
+          <div className="-mr-2 flex items-center">
             <button
-              onClick={onOpenBackup}
-              aria-label={backupDue ? "Backup (no recent backup)" : "Backup"}
-              className="relative -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-fg hover:bg-fill"
+              onClick={onOpenTheme}
+              aria-label="Theme"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-fg hover:bg-fill"
             >
-              <HardDriveDownload size={22} />
-              {backupDue && (
-                <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-warn ring-2 ring-surface" />
-              )}
+              <Palette size={22} />
             </button>
-          )}
+            {canBackup() && (
+              <button
+                onClick={onOpenBackup}
+                aria-label={backupDue ? "Backup (no recent backup)" : "Backup"}
+                className="relative flex h-11 w-11 items-center justify-center rounded-full text-fg hover:bg-fill"
+              >
+                <HardDriveDownload size={22} />
+                {backupDue && (
+                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-warn ring-2 ring-surface" />
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {screen === "tasks" && running && (
@@ -102,12 +113,14 @@ export default function PhoneLayout({
         <main className="px-4 pt-3 pb-24">
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-sm text-fg-soft">
-              All tasks <span className="font-semibold tabular-nums text-fg-strong">{formatDuration(total, timeFormat)}</span>
+              All tasks{" "}
+              <span className="font-semibold tabular-nums text-fg-strong">{formatDuration(total, timeFormat)}</span>
             </p>
             <TimeFormatToggle value={timeFormat} onChange={onTimeFormatChange} />
           </div>
           <PhoneTaskList
             tasks={t.tasks}
+            loaded={t.loaded}
             onToggle={t.toggleTask}
             onPause={t.pauseTask}
             onDelete={t.deleteTask}

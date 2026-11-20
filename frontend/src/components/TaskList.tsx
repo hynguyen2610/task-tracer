@@ -3,9 +3,12 @@ import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
 import type { Status, Task, TaskChanges } from "../types";
 import TaskItem from "./TaskItem";
+import { useNewIds } from "../theme/moments";
 
 interface TaskListProps {
   tasks: Task[];
+  /** Whether the list has been read yet (see useTasks). */
+  loaded: boolean;
   onToggle: (id: number) => void;
   onPause: (id: number) => Promise<Task | undefined>;
   onDelete: (id: number) => void;
@@ -16,6 +19,7 @@ interface TaskListProps {
 
 export default function TaskList({
   tasks,
+  loaded,
   onToggle,
   onPause,
   onDelete,
@@ -25,6 +29,7 @@ export default function TaskList({
 }: TaskListProps) {
   // Only one task can be edited at a time.
   const [editingId, setEditingId] = useState<number | null>(null);
+  const newIds = useNewIds(tasks.map((t) => t.id), loaded);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -46,6 +51,7 @@ export default function TaskList({
                 task={task}
                 index={index}
                 isEditing={editingId === task.id}
+                isNew={newIds.has(task.id)}
                 onStartEdit={() => setEditingId(task.id)}
                 onSave={async (changes) => {
                   await onUpdate(task.id, changes);

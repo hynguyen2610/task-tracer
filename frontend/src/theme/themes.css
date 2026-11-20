@@ -77,3 +77,75 @@
   --c-email-paper: 255 255 255;
   --c-email-ink: 17 24 39;
 }
+
+/* Midnight: dark navy with cyan and violet light. Buttons are light, so text
+   on them (on-color) is dark. */
+[data-theme="midnight"] {
+  color-scheme: dark;
+
+  --c-page: 10 15 30;
+  --c-page-deep: 4 7 18;
+  --c-surface: 18 26 48;
+  --c-fill: 32 43 70;
+  --c-fill-soft: 25 35 60;
+  --c-line: 64 80 115;
+  --c-line-soft: 42 55 88;
+  --c-scrim: 0 0 0;
+  --c-tooltip: 226 232 240;
+
+  --c-fg-strong: 241 245 249;
+  --c-fg: 214 222 235;
+  --c-fg-soft: 186 198 216;
+  --c-fg-muted: 156 172 196;
+  --c-fg-faint: 112 128 155;
+  --c-fg-ghost: 72 88 118;
+  --c-on-color: 8 13 28;
+
+  --c-primary: 34 211 238;
+  --c-primary-hover: 103 232 249;
+  --c-primary-soft: 20 48 72;
+  --c-primary-ring: 34 211 238;
+  --c-accent: 167 139 250;
+  --c-accent-hover: 196 181 253;
+  --c-accent-soft: 42 38 84;
+  --c-accent-ring: 139 92 246;
+  --c-accent-strong: 196 181 253;
+  --c-selected: 103 232 249;
+  --c-go: 74 222 128;
+  --c-go-hover: 134 239 172;
+  --c-stop: 251 113 133;
+  --c-stop-hover: 253 164 175;
+  --c-live: 251 113 133;
+  --c-edit: 250 204 21;
+  --c-edit-hover: 253 224 71;
+  --c-neutral: 148 163 184;
+  --c-neutral-hover: 203 213 225;
+
+  --c-danger: 251 113 133;
+  --c-danger-hover: 253 164 175;
+  --c-danger-soft: 72 22 36;
+  --c-danger-strong: 253 164 175;
+  --c-success: 74 222 128;
+  --c-warn: 251 191 36;
+  --c-warn-soft: 58 44 12;
+  --c-warn-line: 146 104 12;
+  --c-warn-strong: 252 211 77;
+
+  --c-row-highest: 64 24 38;
+  --c-row-highest-edge: 251 113 133;
+  --c-row-high: 62 38 20;
+  --c-row-high-edge: 251 146 60;
+  --c-row-normal: 18 50 44;
+  --c-row-normal-edge: 52 211 153;
+  --c-row-low: 30 40 64;
+  --c-row-low-edge: 112 128 155;
+  --c-row-progress: 14 44 72;
+  --c-row-progress-edge: 56 189 248;
+  --c-row-pending: 58 46 14;
+  --c-row-pending-edge: 251 191 36;
+  --c-row-done: 12 58 46;
+  --c-row-done-edge: 16 185 129;
+
+  --c-email-paper: 255 255 255;
+  --c-email-ink: 17 24 39;
+}

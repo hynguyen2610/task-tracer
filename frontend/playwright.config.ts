@@ -27,7 +27,7 @@ export default defineConfig({
     },
     {
       name: "phone",
-      testMatch: "mobile.spec.ts",
+      testMatch: ["mobile.spec.ts", "themes.spec.ts"],
       use: { ...devices["iPhone SE"], browserName: "chromium", baseURL: `http://localhost:${UI_PORT}` },
     },
     {

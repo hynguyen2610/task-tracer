@@ -117,7 +117,7 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
         >
           <Clock className="h-4 w-4" />
           Workday hours
-          <span className="text-fg-muted tabular-nums">
+          <span className="text-fg-soft tabular-nums">
             {minutesToClock(workday.start)}–{minutesToClock(workday.end)}
           </span>
         </button>

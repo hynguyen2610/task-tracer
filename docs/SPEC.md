@@ -598,8 +598,8 @@ later also fonts, shapes, background graphics and animations.
 | Terminal | black and green, monospace |
 | Zen | soft greens and sand, rounded |
 
-Status: colour roles done (15.1); the theme picker and the other four themes
-are still to come.
+Status: Classic and Midnight are done (15.2, 15.3); Notebook, Terminal and
+Zen are still to come.
 
 ### 15.1 Colour roles
 
@@ -618,3 +618,42 @@ are still to come.
   `email-ink`), the status highlights and link colour inside the email (8.2),
   and the task colours in Statistics (9.2).
 - Text on buttons meets 4.5:1 contrast: Classic's primary blue is `blue-600`.
+
+### 15.2 Choosing a theme
+
+- **Theme** (palette icon) opens the picker: in the header next to Backup on a
+  phone (as a sheet from the bottom), next to Backup and Statistics on
+  desktop (as a dialog).
+- Each theme is shown as a small task card drawn in that theme, with its name
+  and a line about its look. A tap applies it at once; the current one is
+  checked.
+- The choice is saved on the device (`localStorage` key `theme`) and
+  applied by a script in `index.html` before the first paint, so the page
+  never flashes another theme. The phone's status bar colour (`theme-color`)
+  follows the theme.
+- A theme sets the colour roles (15.1), the fonts (`--font-body`,
+  `--font-display` for headings), the page background (`.app-bg`) and the
+  animations for three moments, in `src/theme/effects.css`:
+  - the running task (`.glow`),
+  - a task just added (`data-new`, for 1.5 s; not when the list loads or a
+    screen is opened again),
+  - a task just set to Done (`data-just-done`, for 1.5 s). On a phone the
+    task moves to the folded Finished section, so that section's header
+    shows the moment too.
+- Fonts are stored with the app (`@fontsource` packages, Latin and
+  Vietnamese), so every theme works offline.
+- When the device asks for reduced motion, no theme animates; only the
+  colours change.
+- Every theme is checked for text contrast (4.5:1) on the task list, the
+  report and Statistics, on both layouts (`e2e/themes.spec.ts`, with axe).
+
+### 15.3 The themes so far
+
+- **Classic:** the look before themes. The running task pulses red; nothing
+  else animates.
+- **Midnight:** dark navy cards, cyan buttons with dark text, violet accents,
+  Space Grotesk. The page is a sky of small stars with a faint glow at the
+  top. A light travels round the running task's border; a new task fades in
+  out of the dark; Done sweeps a band of light across the card. Form fields
+  and the browser's controls are dark (`color-scheme: dark`). The report
+  preview stays white, like the email.
