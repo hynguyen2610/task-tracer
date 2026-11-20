@@ -27,6 +27,12 @@ export const THEMES = [
     description: "Green on black, monospace, a blinking cursor",
     barColor: "#000000",
   },
+  {
+    id: "zen",
+    name: "Zen",
+    description: "Sand and sage, soft shapes, a falling leaf",
+    barColor: "#f4efe4",
+  },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

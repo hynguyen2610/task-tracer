@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 // Themes (docs/SPEC.md 15). Runs in the "chromium" (desktop) and "phone"
 // projects, so both layouts are covered.
 
-const THEMES = ["Classic", "Midnight", "Notebook", "Terminal"];
+const THEMES = ["Classic", "Midnight", "Notebook", "Terminal", "Zen"];
 
 const isPhone = (page: Page) => page.viewportSize()!.width < 640;
 
@@ -67,6 +67,8 @@ test("picks a theme, applies it at once and keeps it after a reload", async ({ p
 
 for (const name of THEMES) {
   test(`${name}: text is readable on the main screens`, async ({ page }) => {
+    // Measure the settled screen, not a card halfway through fading in.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await pickTheme(page, name);
     const running = await addTask(page, "ABC-12 Readable in every theme");
     await running.getByRole("button", { name: "Start" }).click();

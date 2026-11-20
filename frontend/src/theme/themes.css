@@ -291,3 +291,72 @@
   --c-email-paper: 255 255 255;
   --c-email-ink: 17 24 39;
 }
+
+/* Zen: sand and sage, clay for accents, soft and calm. */
+[data-theme="zen"] {
+  --c-page: 244 239 228;
+  --c-page-deep: 232 224 206;
+  --c-surface: 252 250 245;
+  --c-fill: 238 233 222;
+  --c-fill-soft: 246 242 234;
+  --c-line: 212 203 184;
+  --c-line-soft: 230 223 208;
+  --c-scrim: 40 45 35;
+  --c-tooltip: 52 70 58;
+
+  --c-fg-strong: 44 56 48;
+  --c-fg: 58 70 61;
+  --c-fg-soft: 72 84 75;
+  --c-fg-muted: 92 102 92;
+  --c-fg-faint: 138 144 132;
+  --c-fg-ghost: 190 192 180;
+  --c-on-color: 255 255 255;
+
+  --c-primary: 70 110 82;
+  --c-primary-hover: 56 92 67;
+  --c-primary-soft: 228 238 228;
+  --c-primary-ring: 130 170 140;
+  --c-accent: 150 80 56;
+  --c-accent-hover: 128 66 46;
+  --c-accent-soft: 245 230 222;
+  --c-accent-ring: 210 150 120;
+  --c-accent-strong: 128 66 46;
+  --c-selected: 70 110 82;
+  --c-go: 82 128 96;
+  --c-go-hover: 66 108 80;
+  --c-stop: 176 86 70;
+  --c-stop-hover: 150 70 56;
+  --c-live: 200 110 90;
+  --c-edit: 172 136 66;
+  --c-edit-hover: 148 116 54;
+  --c-neutral: 124 128 116;
+  --c-neutral-hover: 100 104 94;
+
+  --c-danger: 166 58 48;
+  --c-danger-hover: 138 46 38;
+  --c-danger-soft: 248 230 225;
+  --c-danger-strong: 138 46 38;
+  --c-success: 58 106 72;
+  --c-warn: 196 150 60;
+  --c-warn-soft: 250 242 222;
+  --c-warn-line: 224 200 150;
+  --c-warn-strong: 118 84 18;
+
+  --c-row-highest: 246 222 214;
+  --c-row-highest-edge: 186 92 72;
+  --c-row-high: 248 232 212;
+  --c-row-high-edge: 200 130 70;
+  --c-row-normal: 226 238 222;
+  --c-row-normal-edge: 110 150 110;
+  --c-row-low: 236 234 226;
+  --c-row-low-edge: 160 160 146;
+  --c-row-progress: 220 234 236;
+  --c-row-progress-edge: 90 140 150;
+  --c-row-pending: 246 238 212;
+  --c-row-pending-edge: 190 150 70;
+  --c-row-done: 214 232 214;
+  --c-row-done-edge: 80 130 90;
+
+  --c-email-paper: 255 255 255;
+  --c-email-ink: 17 24 39;
+}

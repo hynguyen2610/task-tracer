@@ -11,7 +11,7 @@ interface ThemePickerProps {
 /** A small task card drawn in the given theme, whatever theme the page uses. */
 function Preview({ id }: { id: ThemeId }) {
   return (
-    <div data-theme={id} aria-hidden className="app-bg bg-page font-sans rounded-lg p-2">
+    <div data-theme={id} aria-hidden className="theme-swatch bg-page font-sans rounded-lg p-2">
       <div className="flex items-center gap-2 rounded-md border-l-4 border-row-progress-edge bg-row-progress px-2 py-1.5">
         <div className="min-w-0 flex-1">
           <div className="truncate text-xs font-semibold text-fg-strong">Daily standup</div>

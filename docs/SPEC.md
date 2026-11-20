@@ -598,8 +598,7 @@ later also fonts, shapes, background graphics and animations.
 | Terminal | black and green, monospace |
 | Zen | soft greens and sand, rounded |
 
-Status: Classic, Midnight, Notebook and Terminal are done (15.2, 15.3); Zen
-is still to come.
+All five are done (15.2, 15.3).
 
 ### 15.1 Colour roles
 
@@ -646,9 +645,13 @@ is still to come.
 - When the device asks for reduced motion, no theme animates; only the
   colours change.
 - Every theme is checked for text contrast (4.5:1) on the task list, the
-  report and Statistics, on both layouts (`e2e/themes.spec.ts`, with axe).
+  report and Statistics, on both layouts (`e2e/themes.spec.ts`, with axe),
+  with motion reduced so the check sees the settled screen.
+- The picker's preview tiles (`.theme-swatch`) carry their own
+  `data-theme` and get that theme's background, whatever theme the page
+  uses.
 
-### 15.3 The themes so far
+### 15.3 The themes
 
 - **Classic:** the look before themes. The running task pulses red; nothing
   else animates.
@@ -671,3 +674,8 @@ is still to come.
   with `>` and task titles with `$`. The running task's time ends in a
   blinking cursor; a new task's title types itself out; Done flashes
   `[ OK ]` on the card.
+- **Zen:** sand and sage with clay accents, Nunito, softer and rounder
+  corners. A leaf sits beside the app's name; the page has two soft shapes
+  and sage waves along the bottom; on a phone the bottom bar has a wavy top
+  edge. The running task breathes slowly; a new task rises gently into place;
+  Done lets a leaf fall from the card.
