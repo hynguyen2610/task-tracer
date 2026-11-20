@@ -114,7 +114,11 @@
   [data-new],
   [data-just-done],
   .animate-sheet-up,
-  .animate-pulse {
+  .animate-pulse,
+  .task-title,
+  .task-title-text,
+  .task-time::after,
+  [data-just-done]::after {
     animation: none !important;
   }
 }
@@ -233,5 +237,115 @@
   from {
     opacity: 0;
     transform: translateY(-28px) rotate(-5deg);
+  }
+}
+
+/* ---------- Terminal ---------- */
+
+[data-theme="terminal"] {
+  --font-body: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display: var(--font-body);
+}
+/* Square everything, like a text screen. */
+[data-theme="terminal"] *,
+[data-theme="terminal"] ::before,
+[data-theme="terminal"] ::after {
+  border-radius: 0 !important;
+}
+/* Phosphor glow on text; the email preview stays plain. */
+[data-theme="terminal"] body {
+  text-shadow: 0 0 6px rgb(var(--c-primary) / 0.35);
+}
+[data-theme="terminal"] .report-preview {
+  text-shadow: none;
+}
+
+/* Scanlines over a faint green glow in the middle of the screen. */
+[data-theme="terminal"] .app-bg {
+  background-color: rgb(var(--c-page));
+  background-image:
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.35) 2px 3px),
+    radial-gradient(ellipse at center, rgb(51 230 102 / 0.07), transparent 70%);
+}
+[data-theme="terminal"] .app-sheet {
+  box-shadow: 0 0 0 1px rgb(var(--c-line)), 0 0 48px rgb(var(--c-primary) / 0.08);
+}
+[data-theme="terminal"] [data-testid="task"] {
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgb(var(--c-line-soft));
+}
+
+/* Prompts */
+[data-theme="terminal"] h1::before {
+  content: "> ";
+  color: rgb(var(--c-accent));
+}
+[data-theme="terminal"] .task-title::before {
+  content: "$ ";
+  color: rgb(var(--c-fg-faint));
+}
+
+/* The running task: a blinking cursor after its time. */
+[data-theme="terminal"] .glow {
+  animation: none;
+  box-shadow: inset 0 0 0 1px rgb(var(--c-primary)), 0 0 18px rgb(var(--c-primary) / 0.25);
+}
+[data-theme="terminal"] .glow .task-time::after {
+  content: "▋";
+  margin-left: 0.15em;
+  animation: terminal-blink 1s steps(1) infinite;
+}
+@keyframes terminal-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* A new task's title types itself out. */
+[data-theme="terminal"] [data-new] .task-title {
+  animation: terminal-type 800ms steps(24, end);
+}
+@keyframes terminal-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Done: an [ OK ] flashes up on the card. */
+[data-theme="terminal"] [data-just-done] {
+  position: relative;
+}
+[data-theme="terminal"] [data-just-done]::after {
+  content: "[ OK ]";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  padding: 0.15rem 0.6rem;
+  background: rgb(var(--c-page-deep));
+  color: rgb(var(--c-success));
+  box-shadow: 0 0 0 1px rgb(var(--c-success));
+  font-weight: 700;
+  pointer-events: none;
+  animation: terminal-ok 1500ms steps(1) forwards;
+}
+@keyframes terminal-ok {
+  0%,
+  20%,
+  40% {
+    opacity: 1;
+  }
+  10%,
+  30% {
+    opacity: 0;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }

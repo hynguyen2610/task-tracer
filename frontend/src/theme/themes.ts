@@ -21,6 +21,12 @@ export const THEMES = [
     description: "Ruled paper, sticky notes, a red pen",
     barColor: "#eee6d2",
   },
+  {
+    id: "terminal",
+    name: "Terminal",
+    description: "Green on black, monospace, a blinking cursor",
+    barColor: "#000000",
+  },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

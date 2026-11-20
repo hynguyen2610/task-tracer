@@ -598,8 +598,8 @@ later also fonts, shapes, background graphics and animations.
 | Terminal | black and green, monospace |
 | Zen | soft greens and sand, rounded |
 
-Status: Classic, Midnight and Notebook are done (15.2, 15.3); Terminal and
-Zen are still to come.
+Status: Classic, Midnight, Notebook and Terminal are done (15.2, 15.3); Zen
+is still to come.
 
 ### 15.1 Colour roles
 
@@ -665,3 +665,9 @@ Zen are still to come.
   task flutters inside a dashed pencil outline; a new task drops onto the
   page; Done tasks are struck through in red pen, and the stroke is drawn when
   a task is set to Done.
+- **Terminal:** green phosphor text on black with amber highlights, JetBrains
+  Mono throughout, every corner square. The page has scanlines and a faint
+  green glow; text glows slightly (not in the email preview). Headings start
+  with `>` and task titles with `$`. The running task's time ends in a
+  blinking cursor; a new task's title types itself out; Done flashes
+  `[ OK ]` on the card.

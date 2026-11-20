@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 // Themes (docs/SPEC.md 15). Runs in the "chromium" (desktop) and "phone"
 // projects, so both layouts are covered.
 
-const THEMES = ["Classic", "Midnight", "Notebook"];
+const THEMES = ["Classic", "Midnight", "Notebook", "Terminal"];
 
 const isPhone = (page: Page) => page.viewportSize()!.width < 640;
 
