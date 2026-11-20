@@ -80,18 +80,18 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
 
   const content = (
     <>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-fg-soft">
         Your tasks and history are kept only in this browser, on this device. Clearing the
         browser's data deletes them. Export a backup now and then; import it to restore, or to
         move to another device.
       </p>
-      <p className="text-sm text-gray-600 mt-3" data-testid="storage-state">
+      <p className="text-sm text-fg-soft mt-3" data-testid="storage-state">
         Storage:{" "}
         {storage === "kept" ? (
-          <strong className="text-green-700">kept by the browser</strong>
+          <strong className="text-success">kept by the browser</strong>
         ) : storage === "may-be-cleared" ? (
           <>
-            <strong className="text-amber-700">may be cleared by the browser</strong>. Installing the
+            <strong className="text-warn-strong">may be cleared by the browser</strong>. Installing the
             app to the home screen helps; on iPhone, Safari clears data after 7 days without use
             unless it is installed.
           </>
@@ -99,7 +99,7 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
           <strong>unknown</strong>
         )}
       </p>
-      <p className="text-sm text-gray-600 mt-1" data-testid="last-backup">
+      <p className="text-sm text-fg-soft mt-1" data-testid="last-backup">
         Last backup: <strong>{last ? dateTime(last) : "never"}</strong>
       </p>
 
@@ -108,7 +108,7 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
           type="button"
           onClick={doExport}
           disabled={busy}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-on-color rounded-lg hover:bg-primary-hover transition disabled:opacity-50"
         >
           <Download size={18} /> Export backup
         </button>
@@ -116,7 +116,7 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
           type="button"
           onClick={() => fileInput.current?.click()}
           disabled={busy}
-          className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-fill-soft transition disabled:opacity-50"
         >
           <Upload size={18} /> Import backup…
         </button>
@@ -131,31 +131,31 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
       </div>
 
       {message && (
-        <p role="status" className="mt-4 text-sm text-green-700">
+        <p role="status" className="mt-4 text-sm text-success">
           {message}
         </p>
       )}
       {error && (
-        <p role="alert" className="mt-4 text-sm text-red-600">
+        <p role="alert" className="mt-4 text-sm text-danger">
           {error}
         </p>
       )}
 
       {pending && (
-        <div className="mt-5 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
-          <p className="text-gray-800">
+        <div className="mt-5 rounded-lg border border-warn-line bg-warn-soft p-4 text-sm">
+          <p className="text-fg-strong">
             Replace everything in this browser with the backup from{" "}
             <strong>{pending.exportedAt ? dateTime(pending.exportedAt) : "an unknown date"}</strong> (
             {count(pending.tasks.length, "task")}, {count(pending.sessions.length, "work session")},{" "}
             {count(pending.events.length, "change")})?
           </p>
-          <p className="text-gray-600 mt-1">The tasks and history here now will be lost.</p>
+          <p className="text-fg-soft mt-1">The tasks and history here now will be lost.</p>
           <div className="flex gap-3 mt-3">
             <button
               type="button"
               onClick={() => doImport(pending)}
               disabled={busy}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+              className="px-4 py-2 bg-danger text-on-color rounded-lg hover:bg-danger-hover transition disabled:opacity-50"
             >
               Replace
             </button>
@@ -163,7 +163,7 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
               type="button"
               onClick={() => setPending(null)}
               disabled={busy}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+              className="px-4 py-2 border rounded-lg hover:bg-fill-soft transition"
             >
               Cancel
             </button>
@@ -183,25 +183,25 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-scrim/40 flex items-start justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="backup-title"
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 my-8"
+        className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6 my-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-2">
-          <h2 id="backup-title" className="text-xl font-bold text-gray-800">
+          <h2 id="backup-title" className="text-xl font-bold text-fg-strong">
             Backup
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fill"
           >
             <X />
           </button>

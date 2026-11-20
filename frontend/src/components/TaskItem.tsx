@@ -47,12 +47,12 @@ export default function TaskItem({
           data-testid="task"
           className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 rounded-xl shadow-sm ${
             STATUS_COLORS[task.status] ?? PRIORITY_COLORS[task.priority]
-          } ${task.isRunning ? "glow border-blue-500" : ""}`}
+          } ${task.isRunning ? "glow border-primary" : ""}`}
         >
           {/* On a phone the buttons go on a line of their own, so the title gets the width. */}
           <div className="flex items-start sm:items-center flex-1 min-w-0">
             <div className="flex-shrink-0 mr-3 sm:mr-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-accent text-on-color flex items-center justify-center font-semibold">
                 {index + 1}
               </div>
             </div>
@@ -62,29 +62,29 @@ export default function TaskItem({
             ) : (
               <div className="min-w-0">
                 {/* Wraps only when the title is longer than the row. */}
-                <p className="font-medium text-gray-800 break-words">{task.title}</p>
+                <p className="font-medium text-fg-strong break-words">{task.title}</p>
                 {/* Stacked on narrow screens, one line on wider ones. */}
                 <div className="md:flex md:flex-wrap md:items-center md:gap-x-6">
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-fg-soft text-sm">
                     <span className="font-medium">Total Time:</span>{" "}
                     {formatDuration(task.totalSeconds, timeFormat)}
                   </p>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-fg-soft text-sm">
                     <span className="font-medium">Priority:</span> {task.priority}
                   </p>
                   {task.startedAt && (
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-fg-soft text-sm">
                       <span className="font-medium">Started:</span>{" "}
                       {formatReportDate(new Date(task.startedAt))}
                     </p>
                   )}
-                  <label className="block text-gray-500 text-sm">
+                  <label className="block text-fg-soft text-sm">
                     <span className="font-medium">Status:</span>{" "}
                     <OptionSelect
                       value={task.status}
                       options={STATUSES}
                       onChange={onStatusChange}
-                      className="border rounded px-1 py-0.5 bg-white/70 text-gray-700"
+                      className="border rounded px-1 py-0.5 bg-surface/70 text-fg"
                     />
                     {task.statusNote && (
                       <span className="ml-2 italic">({task.statusNote})</span>
@@ -111,7 +111,7 @@ export default function TaskItem({
               <button
                 onClick={save}
                 aria-label="Save task"
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-on-color hover:bg-primary-hover"
               >
                 <Check />
               </button>
@@ -119,7 +119,7 @@ export default function TaskItem({
               <button
                 onClick={startEditing}
                 aria-label="Edit task"
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-edit text-on-color hover:bg-edit-hover"
               >
                 <Edit2 />
               </button>
@@ -128,7 +128,7 @@ export default function TaskItem({
             <button
               onClick={onDelete}
               aria-label="Delete task"
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-500 text-white hover:bg-gray-600"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-neutral text-on-color hover:bg-neutral-hover"
             >
               <Trash2 />
             </button>

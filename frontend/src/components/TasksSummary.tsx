@@ -23,13 +23,13 @@ export default function TasksSummary({ tasks, onTimeFormatChange }: TasksSummary
           <TimeFormatToggle value={timeFormat} onChange={onTimeFormatChange} />
         </div>
         {/* Its own line under the buttons on a phone. */}
-        <p className="order-last sm:order-none w-full sm:w-auto sm:text-right text-gray-700 font-medium">
+        <p className="order-last sm:order-none w-full sm:w-auto sm:text-right text-fg font-medium">
           Total Time (All Tasks): {formatDuration(totalSeconds, timeFormat)}
         </p>
         <button
           onClick={() => setReportOpen(true)}
           title="Daily report"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center justify-center"
+          className="px-4 py-2 bg-accent text-on-color rounded-lg hover:bg-accent-hover transition flex items-center justify-center"
         >
           <span className="sr-only">Daily report</span>
           <Mail className="h-6 w-6" />

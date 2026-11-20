@@ -99,7 +99,7 @@ export default function NewTaskForm({ tasks, onAdd, phone = false }: NewTaskForm
             aria-activedescendant={
               showList && highlighted >= 0 ? `${listId}-${highlighted}` : undefined
             }
-            className={`w-full border rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+            className={`w-full border rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-primary-ring ${
               phone ? "h-12 text-base" : "py-2"
             }`}
           />
@@ -108,7 +108,7 @@ export default function NewTaskForm({ tasks, onAdd, phone = false }: NewTaskForm
               id={listId}
               role="listbox"
               aria-label="Existing tasks"
-              className="absolute z-20 left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg overflow-hidden"
+              className="absolute z-20 left-0 right-0 mt-1 bg-surface border rounded-lg shadow-lg overflow-hidden"
             >
               {suggestions.map((task, i) => (
                 <li
@@ -123,11 +123,11 @@ export default function NewTaskForm({ tasks, onAdd, phone = false }: NewTaskForm
                   }}
                   onMouseEnter={() => setHighlighted(i)}
                   className={`px-3 py-2 cursor-pointer flex items-baseline justify-between gap-4 ${
-                    i === highlighted ? "bg-blue-50" : ""
+                    i === highlighted ? "bg-primary-soft" : ""
                   }`}
                 >
-                  <span className="text-gray-800 truncate">{task.title}</span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                  <span className="text-fg-strong truncate">{task.title}</span>
+                  <span className="text-xs text-fg-muted whitespace-nowrap">
                     {task.status} · {startLabel(task)}
                   </span>
                 </li>
@@ -147,7 +147,7 @@ export default function NewTaskForm({ tasks, onAdd, phone = false }: NewTaskForm
         )}
         <button
           onClick={submit}
-          className={`px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition ${
+          className={`px-4 bg-primary text-on-color rounded-lg hover:bg-primary-hover transition ${
             phone ? "h-12 font-medium" : "flex-1 sm:flex-none py-2"
           }`}
         >
@@ -156,7 +156,7 @@ export default function NewTaskForm({ tasks, onAdd, phone = false }: NewTaskForm
       </div>
 
       {match?.startedAt && (
-        <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+        <div className="mt-2 flex items-center gap-2 text-sm text-fg">
           <input
             id={reuseId}
             type="checkbox"

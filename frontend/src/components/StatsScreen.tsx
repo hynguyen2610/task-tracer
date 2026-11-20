@@ -104,20 +104,20 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
           <button
             onClick={onBack}
             aria-label="Back to tasks"
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-fill"
           >
             <ArrowLeft />
           </button>
         )}
-        <h1 className="text-2xl font-bold text-gray-800">Statistics</h1>
+        <h1 className="text-2xl font-bold text-fg-strong">Statistics</h1>
         <button
           onClick={() => setEditingWorkday(true)}
           title="Set working hours and lunch; breaks only count inside them"
-          className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100"
+          className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line text-sm text-fg hover:bg-fill"
         >
           <Clock className="h-4 w-4" />
           Workday hours
-          <span className="text-gray-500 tabular-nums">
+          <span className="text-fg-muted tabular-nums">
             {minutesToClock(workday.start)}–{minutesToClock(workday.end)}
           </span>
         </button>
@@ -155,18 +155,18 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
         />
 
         <section className="flex-1 min-w-0" aria-labelledby="stats-day">
-          <h2 id="stats-day" className="text-lg font-semibold text-gray-800 mb-4">
+          <h2 id="stats-day" className="text-lg font-semibold text-fg-strong mb-4">
             {dateLabel}
           </h2>
 
           {error && (
-            <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p role="alert" className="mb-4 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger-strong">
               Couldn't load statistics: {error}
             </p>
           )}
 
           {!hasData ? (
-            <p className="text-gray-500">No work tracked on this day.</p>
+            <p className="text-fg-muted">No work tracked on this day.</p>
           ) : (
             <>
               <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -184,10 +184,10 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
 
               <DayTimeline stats={stats} colors={colors} timeFormat={timeFormat} />
 
-              <h3 className="font-semibold text-gray-800 mb-2">By task</h3>
+              <h3 className="font-semibold text-fg-strong mb-2">By task</h3>
               <table className="w-full text-sm mb-6">
                 <thead>
-                  <tr className="text-left text-gray-500 border-b">
+                  <tr className="text-left text-fg-muted border-b">
                     <th className="py-1 font-medium">Task</th>
                     <th className="hidden sm:table-cell py-1 pl-3 font-medium text-right">Tracked</th>
                     <th className="hidden sm:table-cell py-1 pl-3 font-medium text-right">Adjusted</th>
@@ -206,17 +206,17 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
                         <button
                           onClick={() => setHistoryTask(t)}
                           title="Show this task's work history across all days"
-                          className="text-left text-gray-800 hover:text-indigo-700 hover:underline"
+                          className="text-left text-fg-strong hover:text-accent-strong hover:underline"
                         >
                           {t.title}
                         </button>
-                        {t.deleted && <span className="ml-1 text-gray-400">(deleted)</span>}
+                        {t.deleted && <span className="ml-1 text-fg-faint">(deleted)</span>}
                       </td>
-                      <td className="hidden sm:table-cell py-1.5 pl-3 text-right tabular-nums text-gray-700">{fmt(t.trackedMs)}</td>
-                      <td className="hidden sm:table-cell py-1.5 pl-3 text-right tabular-nums text-gray-700">
+                      <td className="hidden sm:table-cell py-1.5 pl-3 text-right tabular-nums text-fg">{fmt(t.trackedMs)}</td>
+                      <td className="hidden sm:table-cell py-1.5 pl-3 text-right tabular-nums text-fg">
                         {t.adjustmentMs ? formatDelta(t.adjustmentMs / 1000, timeFormat) : "–"}
                       </td>
-                      <td className="py-1.5 pl-3 text-right tabular-nums font-medium text-gray-800">
+                      <td className="py-1.5 pl-3 text-right tabular-nums font-medium text-fg-strong">
                         {fmt(t.totalMs)}
                       </td>
                     </tr>
@@ -224,12 +224,12 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
                 </tbody>
               </table>
 
-              <h3 className="font-semibold text-gray-800 mb-2">Timeline</h3>
+              <h3 className="font-semibold text-fg-strong mb-2">Timeline</h3>
               <ol className="text-sm space-y-1" aria-label="Timeline entries">
                 {stats.entries.map((e, i) => (
                   <li key={i} data-testid="timeline-entry" className="flex gap-3">
-                    <span className="w-12 shrink-0 tabular-nums text-gray-500">{clock(e.at)}</span>
-                    <span className="text-gray-700">{describe(e, fmt, timeFormat)}</span>
+                    <span className="w-12 shrink-0 tabular-nums text-fg-muted">{clock(e.at)}</span>
+                    <span className="text-fg">{describe(e, fmt, timeFormat)}</span>
                   </li>
                 ))}
               </ol>
@@ -243,9 +243,9 @@ export default function StatsScreen({ tasks, onBack }: StatsScreenProps) {
 
 function Tile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-slate-50 px-3 py-2">
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="text-lg font-semibold text-gray-800 tabular-nums">{value}</dd>
+    <div className="rounded-lg bg-fill-soft px-3 py-2">
+      <dt className="text-xs text-fg-muted">{label}</dt>
+      <dd className="text-lg font-semibold text-fg-strong tabular-nums">{value}</dd>
     </div>
   );
 }

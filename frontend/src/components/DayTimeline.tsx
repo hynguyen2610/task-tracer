@@ -58,7 +58,7 @@ export default function DayTimeline({ stats, colors, timeFormat }: DayTimelinePr
 
   return (
     <figure className="mb-6" aria-label="Timeline of the day">
-      <div ref={track} onClick={pickNearest} className="relative h-10 rounded-md bg-slate-100 cursor-pointer">
+      <div ref={track} onClick={pickNearest} className="relative h-10 rounded-md bg-fill cursor-pointer">
         {stats.segments.map((s) => (
           <div
             key={`${s.taskId}-${s.start}`}
@@ -78,7 +78,7 @@ export default function DayTimeline({ stats, colors, timeFormat }: DayTimelinePr
         {hovered && (
           <div
             role="tooltip"
-            className="absolute z-10 -top-2 -translate-y-full -translate-x-1/2 w-max max-w-[16rem] rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow"
+            className="absolute z-10 -top-2 -translate-y-full -translate-x-1/2 w-max max-w-[16rem] rounded-md bg-tooltip px-2 py-1 text-xs text-on-color shadow"
             // Kept away from the edges so it stays on a narrow screen.
             style={{ left: `clamp(8rem, ${(pct(hovered.start) + pct(hovered.end)) / 2}%, calc(100% - 8rem))` }}
           >
@@ -91,7 +91,7 @@ export default function DayTimeline({ stats, colors, timeFormat }: DayTimelinePr
           </div>
         )}
       </div>
-      <div className="relative h-5 mt-1 text-xs text-gray-500" aria-hidden>
+      <div className="relative h-5 mt-1 text-xs text-fg-muted" aria-hidden>
         {ticks.map((t) => (
           <span
             key={t}

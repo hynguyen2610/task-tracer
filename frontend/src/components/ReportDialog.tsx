@@ -25,7 +25,7 @@ interface ReportDialogProps {
 }
 
 const fieldClass = "border rounded-lg px-2 py-1 w-full text-sm";
-const labelClass = "block text-sm font-medium text-gray-600 mt-3 mb-1";
+const labelClass = "block text-sm font-medium text-fg-soft mt-3 mb-1";
 
 export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
   // Fixed when the dialog opens, so the report doesn't change at midnight.
@@ -78,14 +78,14 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
 
   const summary = (
     <>
-    <p className="text-sm text-gray-500">
+    <p className="text-sm text-fg-muted">
       {reportTasks.length} task{reportTasks.length === 1 ? "" : "s"}: worked on
       today, or still In progress / Pending.
     </p>
-    <p className="text-sm text-gray-700 mt-1">
+    <p className="text-sm text-fg mt-1">
       <span className="font-medium">Total ETA (rounded):</span>{" "}
       {totalRoundedHours(reportTasks)} hour
-      <span className="text-gray-500"> · sum of the ETAs in the report, not copied</span>
+      <span className="text-fg-muted"> · sum of the ETAs in the report, not copied</span>
     </p>
     </>
   );
@@ -150,7 +150,7 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
     </>
   );
   const invalidTickets = invalidTicketLines.length > 0 && (
-      <p role="alert" className="text-sm text-red-600 mt-1">
+      <p role="alert" className="text-sm text-danger mt-1">
         Not used (needs a prefix, a space, and an http(s) URL with {"{id}"} or {"{num}"}):{" "}
         {invalidTicketLines.join(", ")}
       </p>
@@ -158,10 +158,10 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
   const copyMessages = (
     <>
       {copyState === "copied" && (
-        <span className="text-sm text-green-700">Copied. Paste it into your email.</span>
+        <span className="text-sm text-success">Copied. Paste it into your email.</span>
       )}
       {copyState === "failed" && (
-        <span className="text-sm text-red-600">
+        <span className="text-sm text-danger">
           Couldn't copy. Select the preview and copy it by hand.
         </span>
       )}
@@ -171,7 +171,7 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
   // links are for the email; following one here would leave the app.
   const preview = (className: string) => (
     <div
-      className={`report-preview text-gray-900 ${className}`}
+      className={`report-preview bg-email-paper text-email-ink ${className}`}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest("a")) e.preventDefault();
       }}
@@ -181,7 +181,7 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
   const copyButton = (className: string) => (
     <button
       onClick={copy}
-      className={`bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center justify-center gap-2 ${className}`}
+      className={`bg-primary text-on-color rounded-lg hover:bg-primary-hover transition flex items-center justify-center gap-2 ${className}`}
     >
       <Copy className="h-4 w-4" />
       Copy report
@@ -191,7 +191,7 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
   if (isPhone) {
     const tabClass = (t: typeof tab) =>
       `flex-1 h-10 text-sm font-medium border-b-2 ${
-        tab === t ? "border-indigo-600 text-indigo-700" : "border-transparent text-gray-500"
+        tab === t ? "border-accent text-accent-strong" : "border-transparent text-fg-muted"
       }`;
     return (
       <FullScreenPage
@@ -223,7 +223,7 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
           <div role="tabpanel" aria-label="Edit" className="-mt-3">
             {dailyFields}
             <details className="mt-5 rounded-lg border">
-              <summary className="flex cursor-pointer list-none items-center gap-1 px-3 py-3 text-sm font-semibold text-gray-700 [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center gap-1 px-3 py-3 text-sm font-semibold text-fg [&::-webkit-details-marker]:hidden">
                 <ChevronRight size={18} className="transition-transform [details[open]_&]:rotate-90" />
                 Report settings
               </summary>
@@ -241,24 +241,24 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-scrim/40 flex items-start justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="report-title"
-        className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 my-8"
+        className="bg-surface rounded-2xl shadow-xl w-full max-w-4xl p-6 my-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-2">
-          <h2 id="report-title" className="text-xl font-bold text-gray-800">
+          <h2 id="report-title" className="text-xl font-bold text-fg-strong">
             Daily report · {formatReportDate(today)}
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fill"
           >
             <X />
           </button>

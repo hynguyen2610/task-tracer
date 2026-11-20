@@ -39,19 +39,19 @@ export default function FullScreenPage({ title, onClose, header, footer, childre
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex flex-col bg-white"
+      className="fixed inset-0 z-50 flex flex-col bg-surface"
     >
-      <header className="flex-shrink-0 border-b bg-white pt-[env(safe-area-inset-top)]">
+      <header className="flex-shrink-0 border-b bg-surface pt-[env(safe-area-inset-top)]">
         <div className="flex h-14 items-center gap-2 px-2">
           <button
             type="button"
             onClick={close}
             aria-label="Back"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-fg hover:bg-fill"
           >
             <ArrowLeft />
           </button>
-          <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold text-gray-800">
+          <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold text-fg-strong">
             {title}
           </h2>
         </div>
@@ -59,7 +59,7 @@ export default function FullScreenPage({ title, onClose, header, footer, childre
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
       {footer && (
-        <footer className="flex-shrink-0 border-t bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <footer className="flex-shrink-0 border-t bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           {footer}
         </footer>
       )}

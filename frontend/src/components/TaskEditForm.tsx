@@ -27,7 +27,7 @@ interface TaskEditFormProps {
   onSave: () => void;
 }
 
-const labelClass = "block text-sm font-medium text-gray-600";
+const labelClass = "block text-sm font-medium text-fg-soft";
 
 export default function TaskEditForm({
   draft,

@@ -59,41 +59,41 @@ export default function TaskHistoryDialog({ taskId, title, deleted, onPickDay, o
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-scrim/40 flex items-start justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-history-title"
-        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 my-8"
+        className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl p-6 my-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0">
-            <p className="text-sm text-gray-500">Work history</p>
-            <h2 id="task-history-title" className="text-xl font-bold text-gray-800 break-words">
+            <p className="text-sm text-fg-muted">Work history</p>
+            <h2 id="task-history-title" className="text-xl font-bold text-fg-strong break-words">
               {title}
-              {deleted && <span className="ml-2 text-base font-normal text-gray-400">(deleted)</span>}
+              {deleted && <span className="ml-2 text-base font-normal text-fg-faint">(deleted)</span>}
             </h2>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full hover:bg-gray-100"
+            className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full hover:bg-fill"
           >
             <X />
           </button>
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger-strong">
             Couldn't load the history: {error}
           </p>
         )}
-        {!history && !error && <p className="text-gray-500">Loading…</p>}
+        {!history && !error && <p className="text-fg-muted">Loading…</p>}
         {history && history.days.length === 0 && (
-          <p className="text-gray-500">No work recorded for this task.</p>
+          <p className="text-fg-muted">No work recorded for this task.</p>
         )}
 
         {history && history.days.length > 0 && (
@@ -108,7 +108,7 @@ export default function TaskHistoryDialog({ taskId, title, deleted, onPickDay, o
               />
             </dl>
             {history.adjustmentMs !== 0 && (
-              <p className="text-sm text-gray-500 -mt-3 mb-4">
+              <p className="text-sm text-fg-muted -mt-3 mb-4">
                 Tracked {fmt(history.trackedMs)}, adjusted by {formatDelta(history.adjustmentMs / 1000, timeFormat)}
               </p>
             )}
@@ -120,19 +120,19 @@ export default function TaskHistoryDialog({ taskId, title, deleted, onPickDay, o
                     <button
                       onClick={() => onPickDay(new Date(day.start))}
                       title="Show this day's statistics"
-                      className="font-semibold text-gray-800 hover:underline"
+                      className="font-semibold text-fg-strong hover:underline"
                     >
                       {dateLabel(day.start)}
                     </button>
-                    <span className="tabular-nums font-medium text-gray-800">{fmt(day.totalMs)}</span>
+                    <span className="tabular-nums font-medium text-fg-strong">{fmt(day.totalMs)}</span>
                   </div>
                   <ul className="text-sm space-y-0.5">
                     {day.entries.map((e, i) => (
                       <li key={i} className="flex gap-3">
-                        <span className="w-24 shrink-0 tabular-nums text-gray-500">
+                        <span className="w-24 shrink-0 tabular-nums text-fg-muted">
                           {e.kind === "session" ? `${clock(e.at)}–${e.running ? "now" : clock(e.end)}` : clock(e.at)}
                         </span>
-                        <span className="text-gray-700">{describe(e, fmt, timeFormat)}</span>
+                        <span className="text-fg">{describe(e, fmt, timeFormat)}</span>
                       </li>
                     ))}
                   </ul>
@@ -148,9 +148,9 @@ export default function TaskHistoryDialog({ taskId, title, deleted, onPickDay, o
 
 function Tile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-slate-50 px-3 py-2">
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="font-semibold text-gray-800 tabular-nums">{value}</dd>
+    <div className="rounded-lg bg-fill-soft px-3 py-2">
+      <dt className="text-xs text-fg-muted">{label}</dt>
+      <dd className="font-semibold text-fg-strong tabular-nums">{value}</dd>
     </div>
   );
 }

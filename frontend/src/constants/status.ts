@@ -16,9 +16,9 @@ export const DEFAULT_STATUS: Status = "Todo";
  * Todo and Canceled keep the priority color.
  */
 export const STATUS_COLORS: Partial<Record<Status, string>> = {
-  "In progress": "bg-sky-100 border-l-4 border-sky-500",
-  Pending: "bg-amber-100 border-l-4 border-amber-500",
-  Done: "bg-emerald-200 border-l-4 border-emerald-600",
+  "In progress": "bg-row-progress border-l-4 border-row-progress-edge",
+  Pending: "bg-row-pending border-l-4 border-row-pending-edge",
+  Done: "bg-row-done border-l-4 border-row-done-edge",
 };
 
 /** Pending, Done and Canceled tasks can't be started. */

@@ -58,8 +58,8 @@ export default function App() {
   // Desktop and tablet: one card (docs/SPEC.md 14 for the phone layout).
   return (
     <TimeFormatContext.Provider value={format}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex justify-center items-start p-8">
-        <div className="w-full max-w-7xl bg-white rounded-2xl shadow-xl p-6 relative">
+      <div className="min-h-screen bg-gradient-to-br from-page to-page-deep flex justify-center items-start p-8">
+        <div className="w-full max-w-7xl bg-surface rounded-2xl shadow-xl p-6 relative">
           {screen === "stats" ? (
             <StatsScreen tasks={tasks} onBack={() => setScreen("tasks")} />
           ) : (
@@ -70,11 +70,11 @@ export default function App() {
                     onClick={() => setBackupOpen(true)}
                     aria-label={backupDue ? "Backup (no recent backup)" : "Backup"}
                     title={backupDue ? "Backup: no backup in the last week" : "Backup"}
-                    className="relative w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                    className="relative w-10 h-10 flex items-center justify-center rounded-full border border-line text-fg hover:bg-fill transition"
                   >
                     <HardDriveDownload size={20} />
                     {backupDue && (
-                      <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-amber-500 ring-2 ring-white" />
+                      <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-warn ring-2 ring-surface" />
                     )}
                   </button>
                 )}
@@ -82,13 +82,13 @@ export default function App() {
                   onClick={() => setScreen("stats")}
                   aria-label="Statistics"
                   title="Statistics"
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-accent text-on-color hover:bg-accent-hover transition"
                 >
                   <BarChart3 />
                 </button>
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-800 mb-6">Task Tracker</h1>
+              <h1 className="text-2xl font-bold text-fg-strong mb-6">Task Tracker</h1>
 
               <NewTaskForm tasks={tasks} onAdd={addTask} />
               <TasksSummary tasks={tasks} onTimeFormatChange={setFormat} />

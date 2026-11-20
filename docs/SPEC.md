@@ -583,3 +583,38 @@ card layout above, unchanged.
   - **Copy report** stays at the bottom of the screen at full width, on both
     tabs, with "Copied" or the copy error shown just above it.
 - **Backup:** the same content as the dialog (10.3) under the header.
+
+## 15. Themes
+
+Five themes, picked by hand; nothing switches on its own (not by the
+system's dark mode, not by the time of day). A theme changes colours, and
+later also fonts, shapes, background graphics and animations.
+
+| Theme | Look |
+| --- | --- |
+| Classic | today's look: indigo and blue, clean sans-serif (the default) |
+| Midnight | dark navy, cyan accent |
+| Notebook | warm paper, ink blue, handwritten titles |
+| Terminal | black and green, monospace |
+| Zen | soft greens and sand, rounded |
+
+Status: colour roles done (15.1); the theme picker and the other four themes
+are still to come.
+
+### 15.1 Colour roles
+
+- Components use colour **roles**, never fixed colours: page and surfaces
+  (`page`, `surface`, `fill`, `line`), five text levels (`fg-strong` to
+  `fg-ghost`), `on-color` for text on coloured buttons, the actions
+  (`primary`, `accent`, `selected`, `go`/`stop` for start and pause, `edit`,
+  `neutral`), the meanings (`danger`, `success`, `warn`), and the task row
+  colours by priority and status (`row-*` and `row-*-edge`, see 4.5).
+- Each role is a CSS variable set per theme in `src/theme/themes.css`, under
+  `<html data-theme="…">`. Classic is the default.
+- Tailwind's own palette is not available (`tailwind.config.js`), and a unit
+  test (`src/theme/noRawColors.test.ts`) fails if a component uses a palette
+  class such as `bg-blue-500`.
+- Fixed in every theme: the report preview looks like the email (`email-paper`,
+  `email-ink`), the status highlights and link colour inside the email (8.2),
+  and the task colours in Statistics (9.2).
+- Text on buttons meets 4.5:1 contrast: Classic's primary blue is `blue-600`.

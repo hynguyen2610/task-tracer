@@ -21,10 +21,10 @@ export default function PlayPauseButton({
       disabled={disabled}
       title={title}
       aria-label={isRunning ? "Pause" : "Start"}
-      className={`w-10 h-10 flex items-center justify-center rounded-full text-white transition disabled:opacity-40 disabled:cursor-not-allowed ${
+      className={`w-10 h-10 flex items-center justify-center rounded-full text-on-color transition disabled:opacity-40 disabled:cursor-not-allowed ${
         isRunning
-          ? "bg-red-500 hover:bg-red-600"
-          : "bg-green-500 enabled:hover:bg-green-600"
+          ? "bg-stop hover:bg-stop-hover"
+          : "bg-go enabled:hover:bg-go-hover"
       } ${className}`}
     >
       {isRunning ? <Pause /> : <Play />}

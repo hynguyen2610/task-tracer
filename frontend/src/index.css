@@ -1,3 +1,11 @@
+@import "./theme/themes.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* The page behind every screen follows the theme (docs/SPEC.md 15). */
+@layer base {
+  body {
+    @apply bg-page text-fg-strong;
+  }
+}

@@ -56,7 +56,7 @@ export default function ActionMenu({ label, trigger, actions, className = "" }: 
         <ul
           role="menu"
           aria-label={label}
-          className="absolute right-0 top-full z-40 mt-1 min-w-[12rem] overflow-hidden rounded-xl border bg-white py-1 shadow-lg"
+          className="absolute right-0 top-full z-40 mt-1 min-w-[12rem] overflow-hidden rounded-xl border bg-surface py-1 shadow-lg"
         >
           {actions.map((a) => (
             <li key={a.label} role="none">
@@ -67,8 +67,8 @@ export default function ActionMenu({ label, trigger, actions, className = "" }: 
                   setOpen(false);
                   a.onSelect();
                 }}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${
-                  a.danger ? "text-red-600" : "text-gray-800"
+                className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-fill-soft ${
+                  a.danger ? "text-danger" : "text-fg-strong"
                 }`}
               >
                 {a.icon}

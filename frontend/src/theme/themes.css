@@ -1,0 +1,79 @@
+/*
+ * Colour roles per theme (docs/SPEC.md 15), as "R G B" so Tailwind's opacity
+ * modifiers work (bg-surface/95). The theme is chosen on <html data-theme>.
+ * Classic is the default, so it also applies with no data-theme.
+ */
+:root,
+[data-theme="classic"] {
+  /* Surfaces */
+  --c-page: 241 245 249;
+  --c-page-deep: 226 232 240;
+  --c-surface: 255 255 255;
+  --c-fill: 243 244 246;
+  --c-fill-soft: 249 250 251;
+  --c-line: 209 213 219;
+  --c-line-soft: 229 231 235;
+  --c-scrim: 0 0 0;
+  --c-tooltip: 17 24 39;
+
+  /* Text */
+  --c-fg-strong: 31 41 55;
+  --c-fg: 55 65 81;
+  --c-fg-soft: 75 85 99;
+  --c-fg-muted: 107 114 128;
+  --c-fg-faint: 156 163 175;
+  --c-fg-ghost: 209 213 219;
+  --c-on-color: 255 255 255;
+
+  /* Actions. Primary is a shade darker than before, for 4.5:1 white text. */
+  --c-primary: 37 99 235;
+  --c-primary-hover: 29 78 216;
+  --c-primary-soft: 239 246 255;
+  --c-primary-ring: 96 165 250;
+  --c-accent: 79 70 229;
+  --c-accent-hover: 67 56 202;
+  --c-accent-soft: 238 242 255;
+  --c-accent-ring: 129 140 248;
+  --c-accent-strong: 67 56 202;
+  --c-selected: 51 65 85;
+  --c-go: 34 197 94;
+  --c-go-hover: 22 163 74;
+  --c-stop: 239 68 68;
+  --c-stop-hover: 220 38 38;
+  --c-live: 248 113 113;
+  --c-edit: 234 179 8;
+  --c-edit-hover: 202 138 4;
+  --c-neutral: 107 114 128;
+  --c-neutral-hover: 75 85 99;
+
+  /* Meanings */
+  --c-danger: 220 38 38;
+  --c-danger-hover: 185 28 28;
+  --c-danger-soft: 254 242 242;
+  --c-danger-strong: 185 28 28;
+  --c-success: 21 128 61;
+  --c-warn: 245 158 11;
+  --c-warn-soft: 255 251 235;
+  --c-warn-line: 252 211 77;
+  --c-warn-strong: 180 83 9;
+
+  /* Task rows */
+  --c-row-highest: 254 226 226;
+  --c-row-highest-edge: 239 68 68;
+  --c-row-high: 255 237 213;
+  --c-row-high-edge: 249 115 22;
+  --c-row-normal: 220 252 231;
+  --c-row-normal-edge: 34 197 94;
+  --c-row-low: 243 244 246;
+  --c-row-low-edge: 156 163 175;
+  --c-row-progress: 224 242 254;
+  --c-row-progress-edge: 14 165 233;
+  --c-row-pending: 254 243 199;
+  --c-row-pending-edge: 245 158 11;
+  --c-row-done: 167 243 208;
+  --c-row-done-edge: 5 150 105;
+
+  /* The report preview, the same in every theme */
+  --c-email-paper: 255 255 255;
+  --c-email-ink: 17 24 39;
+}

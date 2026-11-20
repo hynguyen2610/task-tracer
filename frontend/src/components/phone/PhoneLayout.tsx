@@ -42,7 +42,7 @@ export default function PhoneLayout({
 
   const navClass = (current: boolean) =>
     `flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium ${
-      current ? "text-indigo-600" : "text-gray-500"
+      current ? "text-accent" : "text-fg-muted"
     }`;
   const navButton = (target: "tasks" | "stats", label: string, icon: React.ReactNode) => (
     <button
@@ -56,19 +56,19 @@ export default function PhoneLayout({
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-[calc(4rem+env(safe-area-inset-bottom))]">
-      <header className="sticky top-0 z-30 border-b bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur">
+    <div className="min-h-screen bg-page pb-[calc(4rem+env(safe-area-inset-bottom))]">
+      <header className="sticky top-0 z-30 border-b bg-surface/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="flex h-14 items-center justify-between px-4">
-          <h1 className="text-xl font-bold text-gray-800">Task Tracker</h1>
+          <h1 className="text-xl font-bold text-fg-strong">Task Tracker</h1>
           {canBackup() && (
             <button
               onClick={onOpenBackup}
               aria-label={backupDue ? "Backup (no recent backup)" : "Backup"}
-              className="relative -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100"
+              className="relative -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-fg hover:bg-fill"
             >
               <HardDriveDownload size={22} />
               {backupDue && (
-                <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-white" />
+                <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-warn ring-2 ring-surface" />
               )}
             </button>
           )}
@@ -78,9 +78,9 @@ export default function PhoneLayout({
           <div
             role="region"
             aria-label="Running task"
-            className="flex items-center gap-3 border-t bg-indigo-600 px-4 py-2 text-white"
+            className="flex items-center gap-3 border-t bg-accent px-4 py-2 text-on-color"
           >
-            <span className="h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full bg-red-400" aria-hidden />
+            <span className="h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full bg-live" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm opacity-90">{running.title}</p>
               <p className="text-xl font-semibold tabular-nums">{formatDuration(running.totalSeconds, timeFormat)}</p>
@@ -88,21 +88,21 @@ export default function PhoneLayout({
             <PlayPauseButton
               isRunning
               onClick={() => t.pauseTask(running.id)}
-              className="!h-12 !w-12 ring-2 ring-white/70"
+              className="!h-12 !w-12 ring-2 ring-on-color/70"
             />
           </div>
         )}
       </header>
 
       {screen === "stats" ? (
-        <main className="bg-white px-4 py-4">
+        <main className="bg-surface px-4 py-4">
           <StatsScreen tasks={t.tasks} />
         </main>
       ) : (
         <main className="px-4 pt-3 pb-24">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="text-sm text-gray-600">
-              All tasks <span className="font-semibold tabular-nums text-gray-800">{formatDuration(total, timeFormat)}</span>
+            <p className="text-sm text-fg-soft">
+              All tasks <span className="font-semibold tabular-nums text-fg-strong">{formatDuration(total, timeFormat)}</span>
             </p>
             <TimeFormatToggle value={timeFormat} onChange={onTimeFormatChange} />
           </div>
@@ -118,7 +118,7 @@ export default function PhoneLayout({
           <button
             onClick={() => setAdding(true)}
             aria-label="Add task"
-            className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600"
+            className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-color shadow-lg hover:bg-primary-hover"
           >
             <Plus size={28} />
           </button>
@@ -127,7 +127,7 @@ export default function PhoneLayout({
 
       <nav
         aria-label="Screens"
-        className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t bg-white pb-[env(safe-area-inset-bottom)]"
+        className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t bg-surface pb-[env(safe-area-inset-bottom)]"
       >
         {navButton("tasks", "Tasks", <ListTodo size={22} />)}
         {/* Opens the full-screen report page over the current screen. */}

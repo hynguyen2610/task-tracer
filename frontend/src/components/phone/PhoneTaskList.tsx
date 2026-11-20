@@ -80,7 +80,7 @@ export default function PhoneTaskList({
       </DragDropContext>
 
       {open.length === 0 && (
-        <p className="py-8 text-center text-gray-500">No open tasks. Tap + to add one.</p>
+        <p className="py-8 text-center text-fg-muted">No open tasks. Tap + to add one.</p>
       )}
 
       {finished.length > 0 && (
@@ -88,7 +88,7 @@ export default function PhoneTaskList({
           <button
             onClick={() => setShowFinished((s) => !s)}
             aria-expanded={showFinished}
-            className="flex w-full items-center gap-1 py-2 text-sm font-semibold text-gray-600"
+            className="flex w-full items-center gap-1 py-2 text-sm font-semibold text-fg-soft"
           >
             <ChevronRight size={18} className={`transition-transform ${showFinished ? "rotate-90" : ""}`} />
             Finished ({finished.length})
@@ -105,7 +105,7 @@ export default function PhoneTaskList({
 
       {statusFor && (
         <BottomSheet title="Status" onClose={() => setStatusFor(null)}>
-          <p className="-mt-2 mb-3 truncate text-sm text-gray-500">{statusFor.title}</p>
+          <p className="-mt-2 mb-3 truncate text-sm text-fg-muted">{statusFor.title}</p>
           <div role="radiogroup" aria-label="Status" className="divide-y rounded-xl border">
             {STATUSES.map((status) => (
               <button
@@ -116,10 +116,10 @@ export default function PhoneTaskList({
                   onStatusChange(statusFor.id, status);
                   setStatusFor(null);
                 }}
-                className="flex h-12 w-full items-center justify-between px-4 text-left text-gray-800"
+                className="flex h-12 w-full items-center justify-between px-4 text-left text-fg-strong"
               >
                 {status}
-                {status === statusFor.status && <Check size={18} className="text-indigo-600" />}
+                {status === statusFor.status && <Check size={18} className="text-accent" />}
               </button>
             ))}
           </div>

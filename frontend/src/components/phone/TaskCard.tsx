@@ -26,13 +26,13 @@ interface TaskCardProps {
 }
 
 const PRIORITY_DOT: Record<Task["priority"], string> = {
-  Highest: "bg-red-500",
-  High: "bg-orange-500",
-  Normal: "bg-green-500",
-  Low: "bg-gray-400",
+  Highest: "bg-row-highest-edge",
+  High: "bg-row-high-edge",
+  Normal: "bg-row-normal-edge",
+  Low: "bg-row-low-edge",
 };
 
-const chip = "inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-xs font-medium text-gray-700";
+const chip = "inline-flex items-center gap-1 rounded-full bg-surface/80 px-2.5 py-1 text-xs font-medium text-fg";
 
 /** One task on the phone layout (docs/SPEC.md 14). */
 export default function TaskCard({
@@ -64,17 +64,17 @@ export default function TaskCard({
           <span
             {...drag.dragHandleProps}
             aria-label="Drag to reorder"
-            className="-ml-1 flex h-8 w-6 flex-shrink-0 items-center justify-center text-gray-400"
+            className="-ml-1 flex h-8 w-6 flex-shrink-0 items-center justify-center text-fg-faint"
           >
             <GripVertical size={18} />
           </span>
         )}
-        <p className="min-w-0 flex-1 break-words pt-1 font-medium leading-snug text-gray-800">{task.title}</p>
+        <p className="min-w-0 flex-1 break-words pt-1 font-medium leading-snug text-fg-strong">{task.title}</p>
         {!isEditing && (
           <ActionMenu
             label="Task actions"
             trigger={<MoreVertical size={20} />}
-            className="-mr-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-black/5"
+            className="-mr-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-scrim/5"
             actions={[
               { label: "Edit task", icon: <Edit2 size={18} />, onSelect: startEditing },
               { label: "Delete task", icon: <Trash2 size={18} />, danger: true, onSelect: onDelete },
@@ -89,7 +89,7 @@ export default function TaskCard({
           <button
             onClick={save}
             aria-label="Save task"
-            className="h-11 w-full rounded-lg bg-blue-500 font-medium text-white hover:bg-blue-600"
+            className="h-11 w-full rounded-lg bg-primary font-medium text-on-color hover:bg-primary-hover"
           >
             Save
           </button>
@@ -109,10 +109,10 @@ export default function TaskCard({
               <span className={chip}>Started {formatReportDate(new Date(task.startedAt))}</span>
             )}
           </div>
-          {task.statusNote && <p className="mt-1 text-sm italic text-gray-600">{task.statusNote}</p>}
+          {task.statusNote && <p className="mt-1 text-sm italic text-fg-soft">{task.statusNote}</p>}
 
           <div className="mt-2 flex items-center justify-between">
-            <span data-testid="task-time" className="text-2xl font-semibold tabular-nums text-gray-800">
+            <span data-testid="task-time" className="text-2xl font-semibold tabular-nums text-fg-strong">
               {formatDuration(task.totalSeconds, timeFormat)}
             </span>
             <PlayPauseButton

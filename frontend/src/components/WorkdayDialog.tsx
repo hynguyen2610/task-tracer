@@ -52,37 +52,37 @@ export default function WorkdayDialog({ value, onSave, onClose }: WorkdayDialogP
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-scrim/40 flex items-start justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <form
         role="dialog"
         aria-modal="true"
         aria-labelledby="workday-title"
-        className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 my-8"
+        className="bg-surface rounded-2xl shadow-xl w-full max-w-sm p-6 my-8"
         onClick={(e) => e.stopPropagation()}
         onSubmit={save}
       >
         <div className="flex items-center justify-between mb-2">
-          <h2 id="workday-title" className="text-xl font-bold text-gray-800">
+          <h2 id="workday-title" className="text-xl font-bold text-fg-strong">
             Workday hours
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fill"
           >
             <X />
           </button>
         </div>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-fg-muted mb-4">
           Breaks only count inside the workday, and never during lunch.
         </p>
 
         <div className="grid grid-cols-2 gap-3">
           {FIELDS.map(({ field, label }) => (
-            <label key={field} className="text-sm font-medium text-gray-600">
+            <label key={field} className="text-sm font-medium text-fg-soft">
               {label}
               <input
                 type="time"
@@ -96,7 +96,7 @@ export default function WorkdayDialog({ value, onSave, onClose }: WorkdayDialogP
         </div>
 
         {error && (
-          <p role="alert" className="mt-3 text-sm text-red-600">
+          <p role="alert" className="mt-3 text-sm text-danger">
             {error}
           </p>
         )}
@@ -105,14 +105,14 @@ export default function WorkdayDialog({ value, onSave, onClose }: WorkdayDialogP
           <button
             type="button"
             onClick={() => setText(toText(DEFAULT_WORKDAY))}
-            className="text-sm text-gray-600 hover:underline"
+            className="text-sm text-fg-soft hover:underline"
           >
             Reset to defaults
           </button>
           <button
             type="submit"
             disabled={!!error}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+            className="px-4 py-2 bg-primary text-on-color rounded-lg hover:bg-primary-hover transition disabled:opacity-50"
           >
             Save
           </button>

@@ -42,18 +42,18 @@ export default function MonthCalendar({
         <button
           onClick={() => onMonthChange(new Date(year, m - 1, 1))}
           aria-label="Previous month"
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-fill"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <h3 className="font-semibold text-gray-800" aria-live="polite">
+        <h3 className="font-semibold text-fg-strong" aria-live="polite">
           {monthLabel}
         </h3>
         <button
           onClick={() => onMonthChange(new Date(year, m + 1, 1))}
           aria-label="Next month"
           disabled={isCurrentMonth}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-fill disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -61,7 +61,7 @@ export default function MonthCalendar({
 
       <div className="grid grid-cols-7 gap-1 text-center text-sm">
         {WEEKDAYS.map((d) => (
-          <div key={d} aria-hidden className="text-xs font-medium text-gray-500 py-1">
+          <div key={d} aria-hidden className="text-xs font-medium text-fg-muted py-1">
             {d}
           </div>
         ))}
@@ -86,12 +86,12 @@ export default function MonthCalendar({
               aria-current={isToday ? "date" : undefined}
               aria-label={`${label}${hasWork ? ", has tracked work" : ""}`}
               data-day={key}
-              className={`relative h-9 rounded-lg transition disabled:text-gray-300 ${
+              className={`relative h-9 rounded-lg transition disabled:text-fg-ghost ${
                 isSelected
-                  ? "bg-indigo-600 text-white font-semibold"
+                  ? "bg-accent text-on-color font-semibold"
                   : isToday
-                    ? "ring-1 ring-indigo-400 text-gray-800 hover:bg-indigo-50"
-                    : "text-gray-700 enabled:hover:bg-gray-100"
+                    ? "ring-1 ring-accent-ring text-fg-strong hover:bg-accent-soft"
+                    : "text-fg enabled:hover:bg-fill"
               }`}
             >
               {day.getDate()}
@@ -99,7 +99,7 @@ export default function MonthCalendar({
                 <span
                   aria-hidden
                   className={`absolute left-1/2 -translate-x-1/2 bottom-1 h-1 w-1 rounded-full ${
-                    isSelected ? "bg-white" : "bg-indigo-500"
+                    isSelected ? "bg-on-color" : "bg-accent"
                   }`}
                 />
               )}

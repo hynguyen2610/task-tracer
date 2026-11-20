@@ -16,7 +16,7 @@ export default function TimeFormatToggle({ value, onChange }: TimeFormatTogglePr
     <div
       role="group"
       aria-label="Time format"
-      className="inline-flex rounded-lg border border-gray-300 overflow-hidden text-sm"
+      className="inline-flex rounded-lg border border-line overflow-hidden text-sm"
     >
       {OPTIONS.map((option) => (
         <button
@@ -27,8 +27,8 @@ export default function TimeFormatToggle({ value, onChange }: TimeFormatTogglePr
           onClick={() => onChange(option.value)}
           className={`px-3 py-1.5 transition ${
             value === option.value
-              ? "bg-slate-700 text-white"
-              : "bg-white text-gray-600 hover:bg-gray-100"
+              ? "bg-selected text-on-color"
+              : "bg-surface text-fg-soft hover:bg-fill"
           }`}
         >
           {option.label}
