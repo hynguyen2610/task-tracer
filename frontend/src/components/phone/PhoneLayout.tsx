@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, HardDriveDownload, ListTodo, Mail, MoreHorizontal, Plus } from "lucide-react";
+import { BarChart3, HardDriveDownload, ListTodo, Mail, Plus } from "lucide-react";
 import { canBackup } from "../../api/backup";
 import { useTimeFormat } from "../../hooks/useTimeFormat";
 import type { useTasks } from "../../hooks/useTasks";
@@ -9,7 +9,6 @@ import PlayPauseButton from "../PlayPauseButton";
 import ReportDialog from "../ReportDialog";
 import StatsScreen from "../StatsScreen";
 import TimeFormatToggle from "../TimeFormatToggle";
-import ActionMenu, { type MenuAction } from "./ActionMenu";
 import BottomSheet from "./BottomSheet";
 import PhoneTaskList from "./PhoneTaskList";
 
@@ -22,11 +21,9 @@ interface PhoneLayoutProps {
   onOpenBackup: () => void;
 }
 
-const dot = <span className="h-2.5 w-2.5 rounded-full bg-amber-500" aria-hidden />;
-
 /**
  * The app below 640px wide (docs/SPEC.md 14): edge to edge, the running task
- * pinned at the top, actions in a menu, and the main controls in thumb reach
+ * pinned at the top, and Tasks, Report and Statistics always in thumb reach
  * at the bottom.
  */
 export default function PhoneLayout({
@@ -43,26 +40,15 @@ export default function PhoneLayout({
   const running = t.tasks.find((task) => task.isRunning);
   const total = t.tasks.reduce((sum, task) => sum + task.totalSeconds, 0);
 
-  const actions: MenuAction[] = [
-    { label: "Daily report", icon: <Mail size={18} />, onSelect: () => setReportOpen(true) },
-  ];
-  if (canBackup()) {
-    actions.push({
-      label: "Backup",
-      ariaLabel: backupDue ? "Backup (no recent backup)" : "Backup",
-      icon: <HardDriveDownload size={18} />,
-      badge: backupDue ? dot : undefined,
-      onSelect: onOpenBackup,
-    });
-  }
-
+  const navClass = (current: boolean) =>
+    `flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium ${
+      current ? "text-indigo-600" : "text-gray-500"
+    }`;
   const navButton = (target: "tasks" | "stats", label: string, icon: React.ReactNode) => (
     <button
       onClick={() => onScreen(target)}
       aria-current={screen === target ? "page" : undefined}
-      className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium ${
-        screen === target ? "text-indigo-600" : "text-gray-500"
-      }`}
+      className={navClass(screen === target)}
     >
       {icon}
       {label}
@@ -74,19 +60,18 @@ export default function PhoneLayout({
       <header className="sticky top-0 z-30 border-b bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="flex h-14 items-center justify-between px-4">
           <h1 className="text-xl font-bold text-gray-800">Task Tracker</h1>
-          <ActionMenu
-            label={backupDue ? "More actions (no recent backup)" : "More actions"}
-            trigger={
-              <>
-                <MoreHorizontal />
-                {backupDue && (
-                  <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-white" />
-                )}
-              </>
-            }
-            actions={actions}
-            className="relative -mr-2 flex h-10 w-10 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100"
-          />
+          {canBackup() && (
+            <button
+              onClick={onOpenBackup}
+              aria-label={backupDue ? "Backup (no recent backup)" : "Backup"}
+              className="relative -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100"
+            >
+              <HardDriveDownload size={22} />
+              {backupDue && (
+                <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-white" />
+              )}
+            </button>
+          )}
         </div>
 
         {screen === "tasks" && running && (
@@ -145,6 +130,11 @@ export default function PhoneLayout({
         className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t bg-white pb-[env(safe-area-inset-bottom)]"
       >
         {navButton("tasks", "Tasks", <ListTodo size={22} />)}
+        {/* Opens the full-screen report page over the current screen. */}
+        <button onClick={() => setReportOpen(true)} aria-haspopup="dialog" className={navClass(reportOpen)}>
+          <Mail size={22} />
+          Report
+        </button>
         {navButton("stats", "Statistics", <BarChart3 size={22} />)}
       </nav>
 

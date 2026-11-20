@@ -66,8 +66,7 @@ test("opens and keeps working offline once loaded", async ({ page, context }) =>
 
 test("asks the browser to keep the data and shows the answer", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /^More actions/ }).click();
-  await page.getByRole("menuitem", { name: /^Backup/ }).click();
+  await page.getByRole("button", { name: /^Backup/ }).click();
   const state = page.getByRole("dialog", { name: "Backup" }).getByTestId("storage-state");
   await expect(state).toContainText(/Storage: (kept by the browser|may be cleared by the browser|unknown)/);
 });

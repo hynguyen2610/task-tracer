@@ -120,13 +120,34 @@ test("open tasks reorder by their handle and finished tasks stay put", async ({ 
 const onScreen = (el: ReturnType<Page["locator"]>) =>
   el.evaluate((node) => {
     const r = node.getBoundingClientRect();
-    return r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
+    // 1px of slack for sub-pixel layout (a bar split in thirds of 320px).
+    return r.top >= -1 && r.left >= -1 && r.bottom <= innerHeight + 1 && r.right <= innerWidth + 1;
   });
 
-async function openFromMenu(page: Page, item: string | RegExp) {
-  await page.getByRole("button", { name: /^More actions/ }).tap();
-  await page.getByRole("menuitem", { name: item }).tap();
+/** Report is in the bottom bar, Backup in the header: one tap each. */
+async function open(page: Page, what: "Report" | "Backup") {
+  if (what === "Report") {
+    await page.getByRole("navigation", { name: "Screens" }).getByRole("button", { name: "Report" }).tap();
+  } else {
+    await page.getByRole("banner").getByRole("button", { name: /^Backup/ }).tap();
+  }
 }
+
+test("Tasks, Report and Statistics are always in the bottom bar", async ({ page }) => {
+  const nav = page.getByRole("navigation", { name: "Screens" });
+  for (const screen of ["Tasks", "Statistics"]) {
+    await nav.getByRole("button", { name: screen, exact: true }).tap();
+    await expect(nav.getByRole("button")).toHaveText(["Tasks", "Report", "Statistics"]);
+    for (const b of await nav.getByRole("button").all()) expect(await onScreen(b)).toBe(true);
+  }
+  // From Statistics, Report opens over it, and Back returns to Statistics.
+  await open(page, "Report");
+  const report = page.getByRole("dialog", { name: /^Daily report/ });
+  await expect(report).toBeVisible();
+  await report.getByRole("button", { name: "Back", exact: true }).tap();
+  await expect(report).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Statistics" })).toBeVisible();
+});
 
 test("the daily report is a full-screen page with Copy always in reach", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -134,7 +155,7 @@ test("the daily report is a full-screen page with Copy always in reach", async (
   const row = await addTask(page, "Report on a phone");
   await row.getByRole("button", { name: "Status: Todo" }).tap();
   await page.getByRole("dialog", { name: "Status" }).getByRole("radio", { name: "In progress" }).tap();
-  await openFromMenu(page, "Daily report");
+  await open(page, "Report");
   const report = page.getByRole("dialog", { name: /^Daily report/ });
   await expect(report).toBeVisible();
   expect(await sideways(page)).toBeLessThanOrEqual(0);
@@ -168,7 +189,7 @@ test("the daily report is a full-screen page with Copy always in reach", async (
 });
 
 test("the phone's back and Escape close a full-screen page and stay in the app", async ({ page }) => {
-  await openFromMenu(page, "Daily report");
+  await open(page, "Report");
   const report = page.getByRole("dialog", { name: /^Daily report/ });
   await expect(report).toBeVisible();
   await page.goBack();
@@ -177,7 +198,7 @@ test("the phone's back and Escape close a full-screen page and stay in the app",
 
   // Closing with Back leaves no extra history: the next phone back has
   // nothing of ours left to undo.
-  await openFromMenu(page, /^Backup/);
+  await open(page, "Backup");
   const backup = page.getByRole("dialog", { name: "Backup" });
   await expect(backup.getByRole("button", { name: "Export backup" })).toBeVisible();
   expect(await sideways(page)).toBeLessThanOrEqual(0);
@@ -185,7 +206,7 @@ test("the phone's back and Escape close a full-screen page and stay in the app",
   await expect(backup).toHaveCount(0);
   expect(await page.evaluate(() => history.state?.fullScreenPage)).toBeFalsy();
 
-  await openFromMenu(page, /^Backup/);
+  await open(page, "Backup");
   await page.keyboard.press("Escape");
   await expect(backup).toHaveCount(0);
 });

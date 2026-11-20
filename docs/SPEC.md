@@ -207,7 +207,7 @@ Dragging a task saves the new order for the whole list right away.
 ## 8. Daily report
 
 The mail button next to the total opens the **Daily report** dialog (on a phone,
-**More actions → Daily report** opens it as a full-screen page, 14.1). It builds an
+**Report** in the bottom bar opens it as a full-screen page, 14.1). It builds an
 email body for today and copies it to the clipboard, formatted, so it can be
 pasted into Gmail or Outlook.
 
@@ -531,9 +531,8 @@ layout of its own, with nothing scrolling sideways. Wider screens keep the
 card layout above, unchanged.
 
 - **Page:** edge to edge on a light grey background, 16 px side margins, no
-  card. A header stays at the top with the title and a **More actions** (⋯)
-  menu: Daily report and Backup. The backup reminder dot
-  (10.3) shows on the ⋯ button and next to Backup.
+  card. A header stays at the top with the title and a **Backup** button,
+  which shows the backup reminder dot (10.3).
 - **Running task:** while a task runs, a bar under the header shows its
   title, its time in large digits and a large Pause button.
 - **Totals:** one line with the total of all tasks and the time format
@@ -555,8 +554,10 @@ card layout above, unchanged.
   title field (focused, so the keyboard opens), priority chips and an Add
   button. Suggestions and the start date offer work as in 6.1. The sheet
   closes after adding, and moves up above the on-screen keyboard.
-- **Screens:** a bottom bar switches between Tasks and Statistics; the
-  Statistics screen has no back arrow there. On Statistics the Workday hours
+- **Bottom bar:** always shows **Tasks**, **Report** and **Statistics**,
+  one tap each, with nothing hidden in a menu. Tasks and Statistics switch
+  screens; Report opens the daily report page over the current screen, and
+  Back returns to it. The Statistics screen has no back arrow there. On Statistics the Workday hours
   button wraps under the title; the By task table and the timeline as in 9.2.
 - **Notch and home indicator:** the page uses `viewport-fit=cover`, and the
   header and bottom bar are padded by the safe-area insets.
