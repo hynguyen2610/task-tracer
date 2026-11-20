@@ -8,6 +8,7 @@ import { formatReportDate } from "../report/dailyReport";
 import { useTimeFormat } from "../hooks/useTimeFormat";
 import { useJustBecame } from "../theme/moments";
 import { useTaskEditing } from "../hooks/useTaskEditing";
+import DueProgressBar from "./DueProgressBar";
 import OptionSelect from "./OptionSelect";
 import PlayPauseButton from "./PlayPauseButton";
 import TaskEditForm from "./TaskEditForm";
@@ -68,7 +69,7 @@ export default function TaskItem({
             {isEditing ? (
               <TaskEditForm draft={draft} onChange={setDraft} onSave={save} />
             ) : (
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 {/* Wraps only when the title is longer than the row. */}
                 <p className="task-title font-medium text-fg-strong break-words">
                   <span className="task-title-text">{task.title}</span>
@@ -76,16 +77,26 @@ export default function TaskItem({
                 {/* Stacked on narrow screens, one line on wider ones. */}
                 <div className="md:flex md:flex-wrap md:items-center md:gap-x-6">
                   <p className="text-fg-soft text-sm">
-                    <span className="font-medium">Total Time:</span>{" "}
+                    <span className="font-medium">Consumed Time:</span>{" "}
                     <span className="task-time">{formatDuration(task.totalSeconds, timeFormat)}</span>
                   </p>
                   <p className="text-fg-soft text-sm">
                     <span className="font-medium">Priority:</span> {task.priority}
                   </p>
+                  {task.etaHours !== null && (
+                    <p className="text-fg-soft text-sm">
+                      <span className="font-medium">ETA:</span> {task.etaHours} h
+                    </p>
+                  )}
                   {task.startedAt && (
                     <p className="text-fg-soft text-sm">
                       <span className="font-medium">Started:</span>{" "}
                       {formatReportDate(new Date(task.startedAt))}
+                    </p>
+                  )}
+                  {task.dueAt !== null && (
+                    <p className="text-fg-soft text-sm">
+                      <span className="font-medium">Due:</span> {formatReportDate(new Date(task.dueAt))}
                     </p>
                   )}
                   <label className="block text-fg-soft text-sm">
@@ -101,6 +112,7 @@ export default function TaskItem({
                     )}
                   </label>
                 </div>
+                <DueProgressBar task={task} className="mt-2 max-w-md" />
               </div>
             )}
           </div>

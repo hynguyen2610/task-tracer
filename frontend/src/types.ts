@@ -15,11 +15,18 @@ export interface Task {
   startedAt: number | null;
   /** Epoch ms of the last tracked time, time edit or status change. */
   lastWorkedAt: number | null;
+  /** Estimated hours to finish the task, a whole number of at least 1. */
+  etaHours: number | null;
+  /** Epoch ms of the due date (local midnight); the task is due by the end of that day. */
+  dueAt: number | null;
 }
 
-/** Fields the user can change from the edit form. Fields left out keep their value. */
+/**
+ * Fields the user can change from the edit form. Fields left out keep their
+ * value; for `etaHours` and `dueAt`, null clears them.
+ */
 export type TaskChanges = Partial<
-  Pick<Task, "title" | "totalSeconds" | "priority" | "status" | "statusNote" | "startedAt">
+  Pick<Task, "title" | "totalSeconds" | "priority" | "status" | "statusNote" | "startedAt" | "etaHours" | "dueAt">
 >;
 
 /** One stretch of the timer running on one task. */

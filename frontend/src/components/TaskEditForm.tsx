@@ -4,6 +4,7 @@ import type { Priority, Status } from "../types";
 import { useId } from "react";
 import { useTimeFormat } from "../hooks/useTimeFormat";
 import { toDateInput } from "../utils/date";
+import { MAX_ETA_HOURS } from "../core/tasks";
 import DurationInput from "./DurationInput";
 import OptionSelect from "./OptionSelect";
 
@@ -19,6 +20,12 @@ export interface TaskDraft {
   priority: Priority;
   status: Status;
   statusNote: string;
+  /** Whole hours as typed; empty for none. */
+  etaHours: string;
+  etaEdited: boolean;
+  /** "YYYY-MM-DD", or empty for no due date. */
+  dueDate: string;
+  dueDateEdited: boolean;
 }
 
 interface TaskEditFormProps {
@@ -36,6 +43,8 @@ export default function TaskEditForm({
 }: TaskEditFormProps) {
   const timeFormat = useTimeFormat();
   const startDateId = useId();
+  const etaId = useId();
+  const dueDateId = useId();
   return (
     <div className="space-y-2 flex-1 min-w-0">
       <label className={labelClass}>Title</label>
@@ -51,7 +60,7 @@ export default function TaskEditForm({
       />
 
       <label className={labelClass}>
-        Total Time ({timeFormat === "decimal" ? "hours" : "HH:mm"})
+        Consumed Time ({timeFormat === "decimal" ? "hours" : "HH:mm"})
       </label>
       <DurationInput
         // Remount on a format switch so the field shows the new format.
@@ -102,6 +111,39 @@ export default function TaskEditForm({
         onChange={(e) =>
           onChange({ ...draft, startDate: e.target.value, startDateEdited: true })
         }
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSave();
+        }}
+        className="border rounded-lg px-2 py-1 max-w-full"
+      />
+
+      <label htmlFor={etaId} className={labelClass}>
+        ETA (hours to finish)
+      </label>
+      <input
+        id={etaId}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={MAX_ETA_HOURS}
+        step={1}
+        value={draft.etaHours}
+        placeholder="e.g. 8"
+        onChange={(e) => onChange({ ...draft, etaHours: e.target.value, etaEdited: true })}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSave();
+        }}
+        className="border rounded-lg px-2 py-1 w-28"
+      />
+
+      <label htmlFor={dueDateId} className={labelClass}>
+        Due date
+      </label>
+      <input
+        id={dueDateId}
+        type="date"
+        value={draft.dueDate}
+        onChange={(e) => onChange({ ...draft, dueDate: e.target.value, dueDateEdited: true })}
         onKeyDown={(e) => {
           if (e.key === "Enter") onSave();
         }}

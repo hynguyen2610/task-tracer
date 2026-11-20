@@ -24,7 +24,7 @@ export default function TasksSummary({ tasks, onTimeFormatChange }: TasksSummary
         </div>
         {/* Its own line under the buttons on a phone. */}
         <p className="order-last sm:order-none w-full sm:w-auto sm:text-right text-fg font-medium">
-          Total Time (All Tasks): {formatDuration(totalSeconds, timeFormat)}
+          Consumed Time (All Tasks): {formatDuration(totalSeconds, timeFormat)}
         </p>
         <button
           onClick={() => setReportOpen(true)}

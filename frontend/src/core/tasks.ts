@@ -62,6 +62,13 @@ function isDate(ms: unknown): boolean {
   return typeof ms === "number" && Number.isInteger(ms) && ms >= 0;
 }
 
+/** The largest ETA accepted, in hours (a year of full working days). */
+export const MAX_ETA_HOURS = 2000;
+
+export function isEta(hours: unknown): boolean {
+  return typeof hours === "number" && Number.isInteger(hours) && hours >= 1 && hours <= MAX_ETA_HOURS;
+}
+
 export class Workspace {
   private readonly tasks = new Map<number, StoredTask>();
   private readonly open: WorkSession[];
@@ -75,7 +82,8 @@ export class Workspace {
   private readonly deleted = new Set<number>();
 
   constructor(snapshot: Snapshot) {
-    for (const t of snapshot.tasks) this.tasks.set(t.id, { ...t });
+    // Tasks saved before ETA and due dates existed have neither.
+    for (const t of snapshot.tasks) this.tasks.set(t.id, { ...t, etaHours: t.etaHours ?? null, dueAt: t.dueAt ?? null });
     this.open = snapshot.openSessions.filter((s) => s.endedAt === null).map((s) => ({ ...s }));
   }
 
@@ -191,6 +199,8 @@ export function createTask(ws: Workspace, title: string, priority?: Priority, st
     statusNote: null,
     startedAt: startedAt ?? null,
     lastWorkedAt: null,
+    etaHours: null,
+    dueAt: null,
   });
 }
 
@@ -223,7 +233,10 @@ export function toggleTask(ws: Workspace, id: number, now: number): StoredTask[]
   return ws.all();
 }
 
-/** Applies an edit (SPEC 4.4). Missing or null fields keep their value; an empty `statusNote` clears the note. */
+/**
+ * Applies an edit (SPEC 4.4). Missing or null fields keep their value; an
+ * empty `statusNote` clears the note, and null clears `etaHours` or `dueAt`.
+ */
 export function updateTask(ws: Workspace, id: number, changes: TaskChanges, now: number): void {
   const wanted = changes.status ?? null;
   if (wanted !== null && !STATUSES.includes(wanted)) {
@@ -231,6 +244,12 @@ export function updateTask(ws: Workspace, id: number, changes: TaskChanges, now:
   }
   if (changes.startedAt !== undefined && changes.startedAt !== null && !isDate(changes.startedAt)) {
     throw new TaskError("invalid", "startedAt must be a date (epoch ms)");
+  }
+  if (changes.etaHours !== undefined && changes.etaHours !== null && !isEta(changes.etaHours)) {
+    throw new TaskError("invalid", `etaHours must be a whole number from 1 to ${MAX_ETA_HOURS}`);
+  }
+  if (changes.dueAt !== undefined && changes.dueAt !== null && !isDate(changes.dueAt)) {
+    throw new TaskError("invalid", "dueAt must be a date (epoch ms)");
   }
   ws.get(id);
 
@@ -255,6 +274,9 @@ export function updateTask(ws: Workspace, id: number, changes: TaskChanges, now:
   const worked = status !== current.status || totalSeconds !== current.totalSeconds;
   // A date picked by hand wins; otherwise it is set once, on leaving Todo.
   const startedAt = changes.startedAt ?? current.startedAt ?? (status !== "Todo" ? now : null);
+  // Unlike the fields above, null clears these two.
+  const etaHours = changes.etaHours === undefined ? current.etaHours : changes.etaHours;
+  const dueAt = changes.dueAt === undefined ? current.dueAt : changes.dueAt;
 
   ws.set(id, {
     title,
@@ -264,6 +286,8 @@ export function updateTask(ws: Workspace, id: number, changes: TaskChanges, now:
     statusNote,
     startedAt,
     lastWorkedAt: worked ? now : current.lastWorkedAt,
+    etaHours,
+    dueAt,
   });
 
   if (status !== current.status) ws.recordStatus(id, title, status, now);

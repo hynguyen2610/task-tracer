@@ -83,9 +83,9 @@ export default function ReportDialog({ tasks, onClose }: ReportDialogProps) {
       today, or still In progress / Pending.
     </p>
     <p className="text-sm text-fg mt-1">
-      <span className="font-medium">Total ETA (rounded):</span>{" "}
+      <span className="font-medium">Total consumed (rounded):</span>{" "}
       {totalRoundedHours(reportTasks)} hour
-      <span className="text-fg-muted"> · sum of the ETAs in the report, not copied</span>
+      <span className="text-fg-muted"> · for the tasks in the report, not copied</span>
     </p>
     </>
   );

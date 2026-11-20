@@ -76,6 +76,8 @@ describe("report with ticket links", () => {
     statusNote: "waiting on ABC-7",
     startedAt: null,
     lastWorkedAt: null,
+    etaHours: null,
+    dueAt: null,
   });
   const settings = {
     ...DEFAULT_REPORT_SETTINGS,

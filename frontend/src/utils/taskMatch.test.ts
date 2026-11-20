@@ -13,6 +13,8 @@ const task = (title: string, startedAt: number | null = null): Task => ({
   statusNote: null,
   startedAt,
   lastWorkedAt: null,
+  etaHours: null,
+  dueAt: null,
 });
 
 describe("normalizeTitle and editDistance", () => {

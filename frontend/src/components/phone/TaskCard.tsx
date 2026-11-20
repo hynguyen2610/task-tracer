@@ -8,6 +8,7 @@ import { useTimeFormat } from "../../hooks/useTimeFormat";
 import { formatReportDate } from "../../report/dailyReport";
 import type { Task, TaskChanges } from "../../types";
 import { formatDuration } from "../../utils/time";
+import DueProgressBar from "../DueProgressBar";
 import PlayPauseButton from "../PlayPauseButton";
 import TaskEditForm from "../TaskEditForm";
 import ActionMenu from "./ActionMenu";
@@ -118,16 +119,22 @@ export default function TaskCard({
               <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT[task.priority]}`} aria-hidden />
               {task.priority}
             </span>
+            {task.etaHours !== null && <span className={chip}>ETA {task.etaHours} h</span>}
             {task.startedAt && (
               <span className={chip}>Started {formatReportDate(new Date(task.startedAt))}</span>
             )}
+            {task.dueAt !== null && <span className={chip}>Due {formatReportDate(new Date(task.dueAt))}</span>}
           </div>
           {task.statusNote && <p className="mt-1 text-sm italic text-fg-soft">{task.statusNote}</p>}
+          <DueProgressBar task={task} className="mt-2.5" />
 
           <div className="mt-2 flex items-center justify-between">
-            <span data-testid="task-time" className="task-time text-2xl font-semibold tabular-nums text-fg-strong">
-              {formatDuration(task.totalSeconds, timeFormat)}
-            </span>
+            <div>
+              <span className="block text-xs font-medium text-fg-soft">Consumed</span>
+              <span data-testid="task-time" className="task-time text-2xl font-semibold tabular-nums text-fg-strong">
+                {formatDuration(task.totalSeconds, timeFormat)}
+              </span>
+            </div>
             <PlayPauseButton
               isRunning={task.isRunning}
               onClick={onToggle}

@@ -1,5 +1,8 @@
 import type { Priority, Status, TaskEvent, WorkSession } from "../types";
-import { STATUSES, type StoredTask } from "./tasks";
+import { STATUSES, isEta, type StoredTask } from "./tasks";
+
+/** An ETA outside the allowed range is dropped rather than refusing the backup. */
+const validEta = (hours: number | null) => (isEta(hours) ? hours : null);
 
 // A whole database, plus the settings kept in localStorage, as one JSON file.
 // See docs/SPEC.md 10.3. backend/scripts/export-json.js writes the same
@@ -125,6 +128,9 @@ export function parseBackup(text: string): Backup {
         statusNote: r.optStr("statusNote"),
         startedAt: r.optInt("startedAt"),
         lastWorkedAt: r.optInt("lastWorkedAt"),
+        // Not in backups made before ETA and due dates existed.
+        etaHours: validEta(r.optInt("etaHours")),
+        dueAt: r.optInt("dueAt"),
       };
     }),
     "tasks"

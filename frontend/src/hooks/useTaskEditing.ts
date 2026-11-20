@@ -4,6 +4,7 @@ import { DEFAULT_STATUS } from "../constants/status";
 import type { TaskDraft } from "../components/TaskEditForm";
 import type { Task, TaskChanges } from "../types";
 import { fromDateInput, toDateInput } from "../utils/date";
+import { isEta } from "../core/tasks";
 
 const emptyDraft: TaskDraft = {
   title: "",
@@ -14,7 +15,17 @@ const emptyDraft: TaskDraft = {
   statusNote: "",
   startDate: "",
   startDateEdited: false,
+  etaHours: "",
+  etaEdited: false,
+  dueDate: "",
+  dueDateEdited: false,
 };
+
+/** The typed ETA: a whole number of hours, or null when empty or not a valid ETA. */
+export function parseEta(text: string): number | null {
+  const hours = Number(text.trim());
+  return text.trim() !== "" && isEta(hours) ? hours : null;
+}
 
 /** The edit form's draft of one task, shared by the desktop row and the phone card. */
 export function useTaskEditing(
@@ -38,6 +49,10 @@ export function useTaskEditing(
       statusNote: current.statusNote ?? "",
       startDate: toDateInput(current.startedAt ? new Date(current.startedAt) : new Date()),
       startDateEdited: false,
+      etaHours: current.etaHours === null ? "" : String(current.etaHours),
+      etaEdited: false,
+      dueDate: current.dueAt === null ? "" : toDateInput(new Date(current.dueAt)),
+      dueDateEdited: false,
     });
     onStartEdit();
   };
@@ -56,6 +71,9 @@ export function useTaskEditing(
       startedAt: draft.startDateEdited
         ? (fromDateInput(draft.startDate) ?? undefined)
         : undefined,
+      // Only changed fields are sent; emptying one clears it (null).
+      etaHours: draft.etaEdited ? parseEta(draft.etaHours) : undefined,
+      dueAt: draft.dueDateEdited ? fromDateInput(draft.dueDate) : undefined,
     });
     setDraft(emptyDraft);
   };

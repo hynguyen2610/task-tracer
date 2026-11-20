@@ -99,11 +99,11 @@ export function roundedHours(totalSeconds: number): number {
   return hours === 0 && totalSeconds > 0 ? 0.25 : hours;
 }
 
-export function formatEta(totalSeconds: number): string {
+export function formatConsumed(totalSeconds: number): string {
   return `${roundedHours(totalSeconds)} hour`;
 }
 
-/** Sum of the ETAs shown in the report, so it matches what the reader adds up. */
+/** Consumed time of the report's tasks, each rounded as above: shown in the dialog only. */
 export function totalRoundedHours(tasks: Task[]): number {
   return tasks.reduce((sum, t) => sum + roundedHours(t.totalSeconds), 0);
 }
@@ -134,7 +134,7 @@ function taskFacts(task: Task) {
     status: STATUS_LABELS[task.status],
     note: task.statusNote ? ` (${task.statusNote})` : "",
     start: task.startedAt ? formatReportDate(new Date(task.startedAt)) : "-",
-    eta: formatEta(task.totalSeconds),
+    eta: task.etaHours === null ? "-" : `${task.etaHours} hour`,
   };
 }
 

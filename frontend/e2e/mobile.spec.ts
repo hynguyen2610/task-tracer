@@ -78,6 +78,33 @@ test("the card menu edits and deletes", async ({ page }) => {
   await expect(card(page, "Edited on a phone")).toHaveCount(0);
 });
 
+test("ETA and due date show as chips, with the time to the due date as a bar", async ({ page }) => {
+  const row = await addTask(page, "Estimated on a phone");
+  const due = new Date();
+  due.setDate(due.getDate() + 5);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  await row.getByRole("button", { name: "Task actions" }).tap();
+  await page.getByRole("menuitem", { name: "Edit task" }).tap();
+  await row.getByLabel("ETA (hours to finish)").fill("12");
+  await row.getByLabel("Due date").fill(`${due.getFullYear()}-${pad(due.getMonth() + 1)}-${pad(due.getDate())}`);
+  expect(await sideways(page)).toBeLessThanOrEqual(0);
+  await row.getByRole("button", { name: "Save task" }).tap();
+
+  await expect(row).toContainText("ETA 12 h");
+  await expect(row).toContainText("Due in 5 days");
+  await expect(row).toContainText("Consumed");
+  await row.getByRole("button", { name: "Start" }).tap();
+  const bar = row.getByRole("progressbar", { name: "Time to due date" });
+  await expect(bar).toBeVisible();
+  await expect(row).toContainText("5 days left");
+  // The bar fits inside the card.
+  const b = (await bar.boundingBox())!;
+  const c = (await row.boundingBox())!;
+  expect(b.x + b.width).toBeLessThanOrEqual(c.x + c.width);
+  expect(await sideways(page)).toBeLessThanOrEqual(0);
+  await row.getByRole("button", { name: "Pause" }).tap();
+});
+
 test("the status chip opens a picker, and finished tasks fold away", async ({ page }) => {
   const row = await addTask(page, "Finish me");
   await row.getByRole("button", { name: "Status: Todo" }).tap();

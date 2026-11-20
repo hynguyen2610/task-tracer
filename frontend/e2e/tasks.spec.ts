@@ -42,13 +42,15 @@ test("adds a task as Todo with no time", async ({ page }) => {
   const title = uniqueTitle("Write report");
   const row = await addTask(page, title, "High");
 
-  await expect(row).toContainText("Total Time: 00:00:00");
+  await expect(row).toContainText("Consumed Time: 00:00:00");
   await expect(row).toContainText("Priority: High");
   await expect(row.locator("select")).toHaveValue("Todo");
   await expect(page.getByPlaceholder("New task title...")).toHaveValue("");
 });
 
 test("ignores a blank title", async ({ page }) => {
+  // Count once the list has loaded (a new database has one task).
+  await expect(page.getByTestId("task").first()).toBeVisible();
   const before = await page.getByTestId("task").count();
   await page.getByPlaceholder("New task title...").fill("   ");
   await page.getByRole("button", { name: "➕ Add" }).click();
@@ -63,7 +65,7 @@ test("starting a task counts time and makes it In progress; pausing keeps it", a
 
   await row.getByRole("button", { name: "Start" }).click();
   await expect(row.locator("select")).toHaveValue("In progress");
-  await expect(row).toContainText(/Total Time: 00:00:0[2-9]/, { timeout: 10_000 });
+  await expect(row).toContainText(/Consumed Time: 00:00:0[2-9]/, { timeout: 10_000 });
 
   await row.getByRole("button", { name: "Pause" }).click();
   await expect(row.getByRole("button", { name: "Start" })).toBeVisible();
@@ -71,9 +73,9 @@ test("starting a task counts time and makes it In progress; pausing keeps it", a
 
   // Paused: the time stops going up.
   const text = await row.innerText();
-  const paused = text.match(/Total Time: (\d\d:\d\d:\d\d)/)![1];
+  const paused = text.match(/Consumed Time: (\d\d:\d\d:\d\d)/)![1];
   await page.waitForTimeout(2_000);
-  await expect(row).toContainText(`Total Time: ${paused}`);
+  await expect(row).toContainText(`Consumed Time: ${paused}`);
 });
 
 test("starting a task stops the one that is running", async ({ page }) => {
@@ -132,7 +134,7 @@ test("edits title, time, priority, status and note", async ({ page }) => {
   const time = edited.getByPlaceholder("HH:mm");
   await time.fill("01:30");
   await time.press("Enter");
-  await expect(edited).toContainText("Total Time: 01:30:00");
+  await expect(edited).toContainText("Consumed Time: 01:30:00");
 });
 
 test("deletes a task", async ({ page }) => {
@@ -169,15 +171,15 @@ test.describe("time format", () => {
     const row = await addTask(page, uniqueTitle("Format"));
     await setTime(row, "01:30");
     await expect(formatButton(page, "hh:mm")).toHaveAttribute("aria-pressed", "true");
-    await expect(row).toContainText("Total Time: 01:30:00");
+    await expect(row).toContainText("Consumed Time: 01:30:00");
 
     await formatButton(page, "Decimal").click();
     await expect(formatButton(page, "Decimal")).toHaveAttribute("aria-pressed", "true");
-    await expect(row).toContainText("Total Time: 1.5 h");
-    await expect(page.getByText(/Total Time \(All Tasks\): [\d.]+ h/)).toBeVisible();
+    await expect(row).toContainText("Consumed Time: 1.5 h");
+    await expect(page.getByText(/Consumed Time \(All Tasks\): [\d.]+ h/)).toBeVisible();
 
     await formatButton(page, "hh:mm").click();
-    await expect(row).toContainText("Total Time: 01:30:00");
+    await expect(row).toContainText("Consumed Time: 01:30:00");
   });
 
   test("remembers the choice after a reload", async ({ page }) => {
@@ -193,20 +195,20 @@ test.describe("time format", () => {
     await row.getByRole("button", { name: "Edit task" }).click();
     await expect(row.getByPlaceholder("Hours, e.g. 1.5")).toHaveValue("0");
     await setTimeInOpenForm(row, "2.25");
-    await expect(row).toContainText("Total Time: 2.25 h");
+    await expect(row).toContainText("Consumed Time: 2.25 h");
 
     // A comma works as the decimal point too.
     await setTime(row, "1,5");
-    await expect(row).toContainText("Total Time: 1.5 h");
+    await expect(row).toContainText("Consumed Time: 1.5 h");
 
     await formatButton(page, "hh:mm").click();
-    await expect(row).toContainText("Total Time: 01:30:00");
+    await expect(row).toContainText("Consumed Time: 01:30:00");
   });
 
   test("saving the form without touching the time keeps its seconds", async ({ page }) => {
     const row = await addTask(page, uniqueTitle("Keep seconds"));
     await row.getByRole("button", { name: "Start" }).click();
-    await expect(row).toContainText(/Total Time: 00:00:0[2-9]/, { timeout: 10_000 });
+    await expect(row).toContainText(/Consumed Time: 00:00:0[2-9]/, { timeout: 10_000 });
 
     // Opening the form pauses the task; the time it shows is final.
     await row.getByRole("button", { name: "Edit task" }).click();
@@ -217,9 +219,9 @@ test.describe("time format", () => {
     await expect(row.getByRole("button", { name: "Edit task" })).toBeVisible();
 
     const text = await row.innerText();
-    expect(text).toMatch(/Total Time: 00:00:0[2-9]/);
+    expect(text).toMatch(/Consumed Time: 00:00:0[2-9]/);
     await page.waitForTimeout(1_500);
-    await expect(row).toContainText(text.match(/Total Time: \S+/)![0]);
+    await expect(row).toContainText(text.match(/Consumed Time: \S+/)![0]);
   });
 });
 
@@ -281,6 +283,90 @@ test.describe("start date", () => {
   });
 });
 
+test.describe("ETA and due date", () => {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dateInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const shortDate = (d: Date) => new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(d);
+  const inDays = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return d;
+  };
+
+  test("are set in the edit form, shown on the task, and cleared again", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Estimated"));
+    await expect(row.getByRole("progressbar")).toHaveCount(0);
+    const due = inDays(3);
+
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await row.getByLabel("ETA (hours to finish)").fill("8");
+    await row.getByLabel("Due date").fill(dateInput(due));
+    await row.getByRole("button", { name: "Save task" }).click();
+    await expect(row.getByRole("button", { name: "Edit task" })).toBeVisible();
+    await expect(row).toContainText("ETA: 8 h");
+    await expect(row).toContainText(`Due: ${shortDate(due)}`);
+    // Not started yet: the days left, but no bar.
+    await expect(row).toContainText("Due in 3 days");
+    await expect(row.getByRole("progressbar")).toHaveCount(0);
+
+    // Once started, the bar runs from today (the start date) to the due date.
+    await row.locator("select").selectOption("In progress");
+    const bar = row.getByRole("progressbar", { name: "Time to due date" });
+    await expect(bar).toBeVisible();
+    await expect(bar).toHaveAttribute("data-tone", "ok");
+    await expect(row).toContainText("3 days left");
+
+    // The form shows them next time; emptying both clears them.
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await expect(row.getByLabel("ETA (hours to finish)")).toHaveValue("8");
+    await expect(row.getByLabel("Due date")).toHaveValue(dateInput(due));
+    await row.getByLabel("ETA (hours to finish)").fill("");
+    await row.getByLabel("Due date").fill("");
+    await row.getByRole("button", { name: "Save task" }).click();
+    await expect(row.getByRole("button", { name: "Edit task" })).toBeVisible();
+    await expect(row).not.toContainText("ETA:");
+    await expect(row).not.toContainText("Due:");
+    await expect(bar).toHaveCount(0);
+  });
+
+  test("an overdue task shows a full red bar", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Late"));
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await row.getByLabel("Start date").fill(dateInput(inDays(-5)));
+    await row.getByLabel("Due date").fill(dateInput(inDays(-2)));
+    await row.getByRole("button", { name: "Save task" }).click();
+    await row.locator("select").selectOption("In progress");
+    const bar = row.getByRole("progressbar", { name: "Time to due date" });
+    await expect(bar).toHaveAttribute("data-tone", "late");
+    await expect(bar).toHaveAttribute("aria-valuenow", "100");
+    await expect(row).toContainText("Overdue by 2 days");
+    // Done: the deadline no longer matters.
+    await row.locator("select").selectOption("Done");
+    await expect(bar).toHaveCount(0);
+  });
+
+  test("the report shows the ETA, and neither the due date nor the consumed time", async ({ page }) => {
+    const row = await addTask(page, uniqueTitle("Reported"));
+    const due = inDays(4);
+    await row.getByRole("button", { name: "Edit task" }).click();
+    await row.getByLabel("ETA (hours to finish)").fill("6");
+    await row.getByLabel("Due date").fill(dateInput(due));
+    await row.locator("input").nth(1).fill("01:30");
+    await row.getByRole("button", { name: "Save task" }).click();
+    await row.locator("select").selectOption("In progress");
+
+    await page.getByRole("button", { name: "Daily report" }).click();
+    const dialog = page.getByRole("dialog");
+    const preview = dialog.locator(".report-preview");
+    await expect(preview).toContainText("ETA : 6 hour");
+    await expect(preview).not.toContainText("Due");
+    await expect(preview).not.toContainText(shortDate(due));
+    await expect(preview).not.toContainText("Consumed");
+    // The dialog still totals the consumed time, outside the email.
+    await expect(dialog).toContainText("Total consumed (rounded): 1.5 hour");
+  });
+});
+
 test.describe("statistics", () => {
   const openStats = async (page: Page) => {
     await page.getByRole("button", { name: "Statistics" }).click();
@@ -328,7 +414,7 @@ test.describe("statistics", () => {
     const title = uniqueTitle("Tracked");
     const row = await addTask(page, title);
     await row.getByRole("button", { name: "Start" }).click();
-    await expect(row).toContainText(/Total Time: 00:00:0[1-9]/, { timeout: 10_000 });
+    await expect(row).toContainText(/Consumed Time: 00:00:0[1-9]/, { timeout: 10_000 });
     await row.getByRole("button", { name: "Pause" }).click();
     await setTimeByEdit(row, "01:30");
     await row.locator("select").selectOption("Done");
@@ -351,7 +437,7 @@ test.describe("statistics", () => {
     const title = uniqueTitle("History");
     const row = await addTask(page, title);
     await row.getByRole("button", { name: "Start" }).click();
-    await expect(row).toContainText(/Total Time: 00:00:0[1-9]/, { timeout: 10_000 });
+    await expect(row).toContainText(/Consumed Time: 00:00:0[1-9]/, { timeout: 10_000 });
     await row.getByRole("button", { name: "Pause" }).click();
     await expect(row.getByRole("button", { name: "Start" })).toBeVisible();
     await setTimeByEdit(row, "02:00");
@@ -569,7 +655,7 @@ test.describe("backup", () => {
     await otherDialog.getByRole("button", { name: "Replace" }).click();
 
     await expect(taskRow(other, title)).toContainText("Priority: High");
-    await expect(taskRow(other, title)).toContainText("Total Time: 1.5 h");
+    await expect(taskRow(other, title)).toContainText("Consumed Time: 1.5 h");
     await other.close();
   });
 

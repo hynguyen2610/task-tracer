@@ -150,6 +150,27 @@ describe.each(stores)("task rules (%s store)", (_name, open) => {
     await expectError(() => db.updateTask(1, { startedAt: 1.5 }, T0), "invalid");
   });
 
+  it("ETA and due date start empty, are set, kept, and cleared by null", async () => {
+    const db = await setup();
+    expect(await task(db, 1)).toMatchObject({ etaHours: null, dueAt: null });
+    await db.updateTask(1, { etaHours: 8, dueAt: T0 + 86_400_000 }, T0);
+    expect(await task(db, 1)).toMatchObject({ etaHours: 8, dueAt: T0 + 86_400_000 });
+    // Left out: kept, and neither counts as work.
+    await db.updateTask(1, { title: "Renamed" }, T0 + 1000);
+    expect(await task(db, 1)).toMatchObject({ etaHours: 8, dueAt: T0 + 86_400_000, lastWorkedAt: null });
+    await db.updateTask(1, { etaHours: null, dueAt: null }, T0 + 2000);
+    expect(await task(db, 1)).toMatchObject({ etaHours: null, dueAt: null });
+  });
+
+  it("an ETA must be a whole number of hours from 1 to 2000", async () => {
+    const db = await setup();
+    for (const etaHours of [0, -3, 1.5, 2001]) {
+      await expectError(() => db.updateTask(1, { etaHours }, T0), "invalid");
+    }
+    await expectError(() => db.updateTask(1, { dueAt: -1 }, T0), "invalid");
+    expect(await task(db, 1)).toMatchObject({ etaHours: null, dueAt: null });
+  });
+
   it("invalid status and unknown task are rejected", async () => {
     const db = await setup();
     await expectError(() => db.updateTask(1, { status: "Blocked" as Status }, T0), "invalid");

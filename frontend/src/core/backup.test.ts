@@ -23,6 +23,8 @@ const valid = (): Backup =>
           statusNote: null,
           startedAt: T0,
           lastWorkedAt: T0,
+          etaHours: 8,
+          dueAt: T0 + 86_400_000,
         },
       ],
       sessions: [{ id: 1, taskId: 3, taskTitle: "Write report", startedAt: T0, endedAt: T0 + 60_000 }],
@@ -82,6 +84,19 @@ describe("backup", () => {
     });
     const task = parseBackup(text).tasks[0];
     expect([task.isRunning, task.position, task.statusNote]).toEqual([true, 0, null]);
+  });
+
+  it("keeps ETA and due date, and reads older backups without them", () => {
+    expect(parseBackup(JSON.stringify(valid())).tasks[0]).toMatchObject({ etaHours: 8, dueAt: T0 + 86_400_000 });
+    const old = withChange((b) => {
+      const t = (b.tasks as Record<string, unknown>[])[0];
+      delete t.etaHours;
+      delete t.dueAt;
+    });
+    expect(parseBackup(old).tasks[0]).toMatchObject({ etaHours: null, dueAt: null });
+    // An ETA the app wouldn't accept is dropped, not the whole backup.
+    const odd = withChange((b) => Object.assign((b.tasks as object[])[0], { etaHours: 0 }));
+    expect(parseBackup(odd).tasks[0].etaHours).toBeNull();
   });
 
   it("doesn't let a task run without a start time", () => {

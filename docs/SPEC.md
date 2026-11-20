@@ -40,7 +40,7 @@ missing columns added when it is opened (4.6). The Express backend in
 |----------------|----------------------|--------------------------------------------------------------|
 | `id`           | integer              | Assigned by the database.                                    |
 | `title`        | string               | Required. The add form ignores blank titles; the backends and the edit form don't check. |
-| `totalSeconds` | integer              | Time tracked so far. Default `0`.                            |
+| `totalSeconds` | integer              | Time tracked so far, shown as **Consumed Time**. Default `0`. |
 | `isRunning`    | boolean              | `true` while the timer is running. Default `false`.          |
 | `lastStart`    | epoch ms or `null`   | When the timer last started or was last brought up to date.  |
 | `position`     | integer              | Order in the list, starting at `0`.                          |
@@ -48,7 +48,9 @@ missing columns added when it is opened (4.6). The Express backend in
 | `status`       | [Status](#4-status)  | Default `Todo`.                                              |
 | `statusNote`   | string or `null`     | Optional short note shown after the status, e.g. "Waiting for Kiro". |
 | `startedAt`    | epoch ms or `null`   | Set once, the first time the task leaves `Todo` (timer start or status change), unless a start date was picked in the edit form (4.5), which always wins. |
-| `lastWorkedAt` | epoch ms or `null`   | Last time work was recorded: time tracked, total time edited, or status changed. Title, priority, note and order changes don't count. |
+| `lastWorkedAt` | epoch ms or `null`   | Last time work was recorded: time tracked, consumed time edited, or status changed. Title, priority, note, ETA, due date and order changes don't count. |
+| `etaHours`     | integer or `null`    | **ETA**: the estimated hours to finish the task, a whole number from 1 to 2000, set in the edit form. Default `null` (none). Shown in the app and in the report (8.2). |
+| `dueAt`        | epoch ms or `null`   | **Due date**: local midnight of the day the task is due by (it is due until the end of that day), set in the edit form. Default `null` (none). |
 
 A new database starts with one task, "First task of the day".
 
@@ -117,8 +119,9 @@ and is only changed or cleared from the edit form.
   - `Done`: green, stronger than the `Normal` priority green.
   - `Todo` and `Canceled` keep the priority color.
 - The page grows with the window up to 1280 px wide, so long titles stay on
-  one line where they fit; longer ones wrap. From 768 px up, total time,
-  priority and status sit on one line under the title; below that they stack.
+  one line where they fit; longer ones wrap. From 768 px up, consumed time,
+  priority, ETA, start date, due date and status sit on one line under the
+  title; below that they stack.
 - Each task shows a Status dropdown after the priority, followed by the note
   in brackets when there is one. Picking a value saves it right away, with the
   rules in 4.4; no need to open the edit form.
@@ -129,6 +132,12 @@ and is only changed or cleared from the edit form.
   stay as they are). If the picker isn't touched, nothing is saved, so a
   `Todo` task still gets its start date when it really starts.
 - A task with a start date shows **Started: 06 Nov** after its priority.
+- A task with an ETA shows **ETA: 8 h**, and one with a due date **Due: 25 Nov**.
+- After the start date picker come **ETA (hours to finish)**, a whole number,
+  and a **Due date** picker (any date, past ones too). Each is saved only if
+  it was changed; emptying a field clears it. An ETA that isn't a whole number
+  from 1 to 2000 is saved as none.
+- Under the details, the time to the due date (4.7).
 - The play button is disabled for `Pending`, `Done` and `Canceled` tasks.
 
 ### 4.6 Existing data
@@ -142,6 +151,22 @@ fills it in:
 | `statusNote`   | `null`.                                                        |
 | `startedAt`    | `lastStart`, the only date older rows have. `null` if never started. |
 | `lastWorkedAt` | `lastStart`, same reason.                                      |
+
+### 4.7 Time to the due date
+
+A task with a due date shows how far it is from it
+(`utils/dueProgress.ts`, `components/DueProgressBar.tsx`):
+
+- **Started tasks** (with a start date) get a bar that fills from the start
+  of the start date to the end of the due date, and the days left by the
+  calendar: `6 days left`, `1 day left`, `Due today`, `Overdue by 2 days`.
+  It is green, amber from 75% of the time used or on the due date, and red
+  and full once the due date has passed.
+- **Tasks not started yet** show only the days, as `Due in 3 days`,
+  `Due today` or `Overdue by 1 day`, with no bar.
+- **Done and Canceled tasks** show no progress; the due date no longer
+  matters.
+- It refreshes every minute.
 
 ## 5. Timer
 
@@ -170,10 +195,10 @@ back next time.
 
 | Where                        | hh:mm      | Decimal                      |
 |------------------------------|------------|------------------------------|
-| Task's Total Time, Total Time (All Tasks) | `01:30:00` (seconds kept, so a running timer visibly ticks) | `1.5 h` (hours, at most 2 decimals) |
-| Edit form's Total Time field | `01:30`    | `1.5`; a comma works as the decimal point |
+| Task's Consumed Time, Consumed Time (All Tasks) | `01:30:00` (seconds kept, so a running timer visibly ticks) | `1.5 h` (hours, at most 2 decimals) |
+| Edit form's Consumed Time field | `01:30`    | `1.5`; a comma works as the decimal point |
 
-The daily report (ETA in quarter hours) doesn't change with the switch.
+The daily report (ETA in whole hours, total consumed in quarter hours) doesn't change with the switch.
 
 ## 6. List order
 
@@ -200,7 +225,7 @@ Dragging a task saves the new order for the whole list right away.
 
 ## 7. Totals
 
-- **Total Time (All Tasks)** is the sum of `totalSeconds` for every task in
+- **Consumed Time (All Tasks)** is the sum of `totalSeconds` for every task in
   the list, whatever its status (`Done` and `Canceled` included), shown in the
   chosen time format (5.1).
 
@@ -231,7 +256,7 @@ are left out.
    o Task #<n>: <title>
       ▪ Status : <status> (<note>)
       ▪ Start date : <startedAt as "06 Nov", or "-">
-      ▪ ETA : <hours> hour
+      ▪ ETA : <etaHours> hour, or "-"
 2. Next Planned tasks
    o <line>
       ▪ <line starting with "-">
@@ -248,16 +273,16 @@ are left out.
   `InProgress`, and `Canceled`, shown as `CANCELLED`. The label has a
   background highlight: `Done` bright green, `InProgress` yellow, `Pending`
   orange, `CANCELLED` pink. `Todo` has none.
-- **ETA** is the total tracked time rounded to the nearest quarter hour, e.g.
-  `1.25 hour`. Any tracked time under 7.5 minutes shows as `0.25 hour`.
+- **ETA** is the task's estimate, in whole hours. The layout above is fixed:
+  the due date and the consumed (tracked) time are not in the report.
 - An empty section shows `None`.
 
 ### 8.3 Email text
 
 The dialog has fields for greeting, intro, next planned tasks, issues,
-signature and ticket links (8.5), with a live preview. Above them it shows **Total ETA (rounded)**:
-the sum of the report's rounded ETAs, so it matches what a reader adds up from
-the email. It is shown in the dialog only, not copied.
+signature and ticket links (8.5), with a live preview. Above them it shows **Total consumed (rounded)**:
+the consumed time of the report's tasks, each rounded to the nearest quarter
+hour (any time under 7.5 minutes counts as `0.25`). It is shown in the dialog only, not copied.
 
 Next planned tasks takes one item per line; a line starting with `-` becomes a
 sub-item of the line above. The fields are saved in `localStorage` (the
@@ -411,7 +436,7 @@ TypeScript.
 |-----------------|---------------------------------------------|-----------------------------|
 | `get_tasks`     | none                                        | All tasks, by `position`.   |
 | `create_task`   | `{ title, priority?, startedAt? }`          | The created task, as `Todo` (priority defaults to `Normal`). `startedAt` reuses an earlier start date (6.1); fails with "startedAt must be a date (epoch ms)" if negative. |
-| `update_task`   | `{ id, changes: { title?, totalSeconds?, priority?, status?, statusNote?, startedAt? } }`; fields left out or `null` keep their value, an empty `statusNote` clears it | Nothing. Fails with "status must be one of: …", "startedAt must be a date (epoch ms)" for a negative `startedAt`, or "Task not found". Applies 4.4. |
+| `update_task`   | `{ id, changes: { title?, totalSeconds?, priority?, status?, statusNote?, startedAt? } }` (the desktop app doesn't store ETA or due date yet); fields left out or `null` keep their value, an empty `statusNote` clears it | Nothing. Fails with "status must be one of: …", "startedAt must be a date (epoch ms)" for a negative `startedAt`, or "Task not found". Applies 4.4. |
 | `toggle_task`   | `{ id }`                                    | All tasks, by `position`. Fails with "Task not found", or "Cannot start a `<status>` task" for `Pending`, `Done` and `Canceled`. Applies 4.3. |
 | `reorder_tasks` | `{ ids }`, the full new order               | Nothing.                    |
 | `delete_task`   | `{ id }`                                    | Nothing.                    |
@@ -487,9 +512,13 @@ to Statistics opens a dialog to export and import all data as one JSON file
 
 - `Pending`, `Done` and `Canceled` tasks stay in the main list, in their position.
 - There is no Excel export; the daily report replaced it.
-- Total Time includes `Canceled` tasks.
+- Consumed Time (All Tasks) includes `Canceled` tasks.
 - `Pending` tasks can't be started; set them back to `In progress` first.
-- The report's ETA is tracked time, not an estimate.
+- ETA is an estimate typed by hand, in whole hours. The report keeps its
+  layout (status, start date, ETA); the due date and consumed time stay in the
+  app, and the report dialog totals the consumed time, outside the email.
+- The progress bar measures time to the due date, not consumed time against
+  the ETA.
 - Deleted tasks keep their history in the statistics.
 - A total time typed by hand is recorded as an adjustment and counts toward
   that day's work.
@@ -539,9 +568,10 @@ card layout above, unchanged.
   toggle.
 - **Task card:** the title in full on the first line, between a drag handle
   and a ⋮ menu (Edit task, Delete task). Below it, chips for the status, the
-  priority (with its colour dot) and the start date, then the status note.
-  The last line has the time in large digits and one Start/Pause button of
-  48 px. The card keeps the row colours of 4.5. Editing opens the edit form
+  priority (with its colour dot), the ETA, the start date and the due date,
+  then the status note and the time to the due date (4.7). The last line has
+  the consumed time in large digits, labelled **Consumed**, and one
+  Start/Pause button of 48 px. The card keeps the row colours of 4.5. Editing opens the edit form
   in the card, with a full-width Save button.
 - **Status:** tapping the status chip opens a sheet from the bottom listing
   the five statuses; a tap picks one and closes it.
@@ -574,7 +604,7 @@ card layout above, unchanged.
   app. Back, Escape and the phone's back all close it the same way.
 - **Daily report:**
   - Two tabs under the title: **Preview** (shown first) and **Edit**.
-  - **Preview:** the task count and Total ETA (8.3), then the email
+  - **Preview:** the task count and Total consumed (8.3), then the email
     preview at full width, scrolling with the page (no scroll box of its own).
   - **Edit:** Next planned tasks and Issue / Concerns / Blocks, which change
     from day to day. Greeting, intro, signature and ticket links are under
