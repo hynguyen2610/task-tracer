@@ -5,8 +5,7 @@ What the app does and the rules it follows.
 ## 1. Overview
 
 A single-user time tracker. You keep an ordered list of tasks, start and pause
-a timer on one task at a time, export the time spent to Excel, and copy a
-daily work report into an email.
+a timer on one task at a time, and copy a daily work report into an email.
 
 The same UI (React + Vite, `frontend/src/`) runs in two ways.
 `frontend/src/api/tasks.ts` picks the right one at runtime with `isTauri()`.
@@ -174,8 +173,7 @@ back next time.
 | Task's Total Time, Total Time (All Tasks) | `01:30:00` (seconds kept, so a running timer visibly ticks) | `1.5 h` (hours, at most 2 decimals) |
 | Edit form's Total Time field | `01:30`    | `1.5`; a comma works as the decimal point |
 
-The daily report (ETA in quarter hours) and the Excel export (hours, 2
-decimals) don't change with the switch.
+The daily report (ETA in quarter hours) doesn't change with the switch.
 
 ## 6. List order
 
@@ -200,19 +198,15 @@ Dragging a task saves the new order for the whole list right away.
   `Todo`.
 - Only tasks in the list are matched; deleted tasks aren't suggested.
 
-## 7. Totals and export
+## 7. Totals
 
 - **Total Time (All Tasks)** is the sum of `totalSeconds` for every task in
   the list, whatever its status (`Done` and `Canceled` included), shown in the
   chosen time format (5.1).
-- **Export to Excel** writes `tasks.xlsx` with one sheet, "Tasks", and three
-  columns: Total Time (hours, 2 decimals), Title and Status. Every task is
-  exported, in list order. The desktop app asks where to save (cancelling
-  writes nothing); the browser downloads the file.
 
 ## 8. Daily report
 
-The mail button next to Export opens the **Daily report** dialog (on a phone,
+The mail button next to the total opens the **Daily report** dialog (on a phone,
 **More actions → Daily report** opens it as a full-screen page, 14.1). It builds an
 email body for today and copies it to the clipboard, formatted, so it can be
 pasted into Gmail or Outlook.
@@ -492,7 +486,7 @@ to Statistics opens a dialog to export and import all data as one JSON file
 ## 12. Decisions
 
 - `Pending`, `Done` and `Canceled` tasks stay in the main list, in their position.
-- The Excel export has a Status column and includes `Canceled` tasks.
+- There is no Excel export; the daily report replaced it.
 - Total Time includes `Canceled` tasks.
 - `Pending` tasks can't be started; set them back to `In progress` first.
 - The report's ETA is tracked time, not an estimate.
@@ -538,7 +532,7 @@ card layout above, unchanged.
 
 - **Page:** edge to edge on a light grey background, 16 px side margins, no
   card. A header stays at the top with the title and a **More actions** (⋯)
-  menu: Daily report, Export to Excel and Backup. The backup reminder dot
+  menu: Daily report and Backup. The backup reminder dot
   (10.3) shows on the ⋯ button and next to Backup.
 - **Running task:** while a task runs, a bar under the header shows its
   title, its time in large digits and a large Pause button.

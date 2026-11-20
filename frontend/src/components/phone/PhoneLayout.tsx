@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { BarChart3, FileSpreadsheet, HardDriveDownload, ListTodo, Mail, MoreHorizontal, Plus } from "lucide-react";
+import { BarChart3, HardDriveDownload, ListTodo, Mail, MoreHorizontal, Plus } from "lucide-react";
 import { canBackup } from "../../api/backup";
 import { useTimeFormat } from "../../hooks/useTimeFormat";
 import type { useTasks } from "../../hooks/useTasks";
-import { exportToExcel } from "../../utils/exportToExcel";
 import { formatDuration, type TimeFormat } from "../../utils/time";
 import NewTaskForm from "../NewTaskForm";
 import PlayPauseButton from "../PlayPauseButton";
@@ -46,11 +45,6 @@ export default function PhoneLayout({
 
   const actions: MenuAction[] = [
     { label: "Daily report", icon: <Mail size={18} />, onSelect: () => setReportOpen(true) },
-    {
-      label: "Export to Excel",
-      icon: <FileSpreadsheet size={18} />,
-      onSelect: () => exportToExcel(t.tasks).catch((err) => alert(`Export failed: ${err}`)),
-    },
   ];
   if (canBackup()) {
     actions.push({

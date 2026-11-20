@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { FileSpreadsheet, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import type { Task } from "../types";
 import { formatDuration, type TimeFormat } from "../utils/time";
-import { exportToExcel } from "../utils/exportToExcel";
 import { useTimeFormat } from "../hooks/useTimeFormat";
 import ReportDialog from "./ReportDialog";
 import TimeFormatToggle from "./TimeFormatToggle";
@@ -34,15 +33,6 @@ export default function TasksSummary({ tasks, onTimeFormatChange }: TasksSummary
         >
           <span className="sr-only">Daily report</span>
           <Mail className="h-6 w-6" />
-        </button>
-        <button
-          onClick={() =>
-            exportToExcel(tasks).catch((err) => alert(`Export failed: ${err}`))
-          }
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center"
-        >
-          <span className="sr-only">Export to Excel</span>
-          <FileSpreadsheet className="h-6 w-6" />
         </button>
       </div>
 

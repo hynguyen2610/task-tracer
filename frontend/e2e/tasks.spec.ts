@@ -149,13 +149,6 @@ test("keeps tasks after a reload", async ({ page }) => {
   await expect(taskRow(page, title)).toContainText("Priority: Highest");
 });
 
-test("exports tasks.xlsx as a download", async ({ page }) => {
-  await addTask(page, uniqueTitle("Exported"));
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export to Excel" }).click();
-  expect((await download).suggestedFilename()).toBe("tasks.xlsx");
-});
-
 test.describe("time format", () => {
   const formatButton = (page: Page, name: "hh:mm" | "Decimal") =>
     page.getByRole("group", { name: "Time format" }).getByRole("button", { name });

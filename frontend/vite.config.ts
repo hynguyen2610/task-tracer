@@ -37,9 +37,6 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         navigateFallback: '/index.html',
-        // The bundle (with the Excel library) is close to the 2 MiB default;
-        // a bigger file would silently be left out and break offline use.
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         cleanupOutdatedCaches: true,
       },
     }),
