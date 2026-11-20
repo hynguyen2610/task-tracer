@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, HardDriveDownload, ListTodo, Mail, Palette, Plus } from "lucide-react";
+import { BarChart3, HardDriveDownload, ListTodo, Mail, Plus, Settings } from "lucide-react";
 import { canBackup } from "../../api/backup";
 import { useTimeFormat } from "../../hooks/useTimeFormat";
 import type { useTasks } from "../../hooks/useTasks";
@@ -18,7 +18,7 @@ interface PhoneLayoutProps {
   onTimeFormatChange: (format: TimeFormat) => void;
   backupDue: boolean;
   onOpenBackup: () => void;
-  onOpenTheme: () => void;
+  onOpenSettings: () => void;
 }
 
 /**
@@ -33,7 +33,7 @@ export default function PhoneLayout({
   onTimeFormatChange,
   backupDue,
   onOpenBackup,
-  onOpenTheme,
+  onOpenSettings,
 }: PhoneLayoutProps) {
   const timeFormat = useTimeFormat();
   const [adding, setAdding] = useState(false);
@@ -62,11 +62,11 @@ export default function PhoneLayout({
           <h1 className="text-xl font-bold text-fg-strong">Task Tracker</h1>
           <div className="-mr-2 flex items-center">
             <button
-              onClick={onOpenTheme}
-              aria-label="Theme"
+              onClick={onOpenSettings}
+              aria-label="Settings"
               className="flex h-11 w-11 items-center justify-center rounded-full text-fg hover:bg-fill"
             >
-              <Palette size={22} />
+              <Settings size={22} />
             </button>
             {canBackup() && (
               <button

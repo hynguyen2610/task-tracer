@@ -1,12 +1,5 @@
-import { useEffect } from "react";
-import { Check, Play, X } from "lucide-react";
-import { useIsPhone } from "../hooks/useIsPhone";
+import { Check, Play } from "lucide-react";
 import { THEMES, setTheme, useTheme, type ThemeId } from "../theme/themes";
-import BottomSheet from "./phone/BottomSheet";
-
-interface ThemePickerProps {
-  onClose: () => void;
-}
 
 /** A small task card drawn in the given theme, whatever theme the page uses. */
 function Preview({ id }: { id: ThemeId }) {
@@ -29,21 +22,10 @@ function Preview({ id }: { id: ThemeId }) {
   );
 }
 
-/** Choose one of the themes (docs/SPEC.md 15); it applies at once and is kept. */
-export default function ThemePicker({ onClose }: ThemePickerProps) {
-  const isPhone = useIsPhone();
+/** The themes to choose from, in Settings (docs/SPEC.md 15.2); a tap applies one and keeps it. */
+export default function ThemePicker() {
   const current = useTheme();
-
-  useEffect(() => {
-    if (isPhone) return; // the sheet handles Escape
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, isPhone]);
-
-  const list = (
+  return (
     <div role="radiogroup" aria-label="Theme" className="grid gap-3 sm:grid-cols-2">
       {THEMES.map((t) => (
         <button
@@ -66,41 +48,6 @@ export default function ThemePicker({ onClose }: ThemePickerProps) {
           </div>
         </button>
       ))}
-    </div>
-  );
-
-  if (isPhone) {
-    return (
-      <BottomSheet title="Theme" onClose={onClose}>
-        {list}
-      </BottomSheet>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-scrim/40 flex items-start justify-center p-4 overflow-y-auto" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="theme-title"
-        className="bg-surface rounded-2xl shadow-xl w-full max-w-xl p-6 my-8"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 id="theme-title" className="text-xl font-bold text-fg-strong">
-            Theme
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-fill"
-          >
-            <X />
-          </button>
-        </div>
-        {list}
-      </div>
     </div>
   );
 }

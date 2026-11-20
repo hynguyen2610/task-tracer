@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { Check, ChevronRight } from "lucide-react";
 import { STATUSES, isFinished } from "../../constants/status";
 import type { Status, Task, TaskChanges } from "../../types";
+import { useUiMode } from "../../hooks/useUiMode";
+import { useNewIds } from "../../theme/moments";
+import CompactTaskRow from "../CompactTaskRow";
 import BottomSheet from "./BottomSheet";
 import TaskCard from "./TaskCard";
-import { useNewIds } from "../../theme/moments";
 
 interface PhoneTaskListProps {
   tasks: Task[];
@@ -36,6 +38,7 @@ export default function PhoneTaskList({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [statusFor, setStatusFor] = useState<Task | null>(null);
   const [showFinished, setShowFinished] = useState(false);
+  const compact = useUiMode() === "compact";
 
   const open = tasks.filter((t) => !isFinished(t));
   const newIds = useNewIds(tasks.map((t) => t.id), loaded);
@@ -54,7 +57,15 @@ export default function PhoneTaskList({
     if (from !== to) onMove(from, to);
   };
 
-  const card = (task: Task, drag?: Parameters<typeof TaskCard>[0]["drag"]) => (
+  const card = (task: Task, drag?: Parameters<typeof TaskCard>[0]["drag"]) =>
+    compact ? (
+      <CompactTaskRow
+        task={task}
+        isNew={newIds.has(task.id)}
+        justDone={justFinished.has(task.id) && task.status === "Done"}
+        onToggle={() => onToggle(task.id)}
+      />
+    ) : (
     <TaskCard
       task={task}
       drag={drag}
@@ -73,12 +84,22 @@ export default function PhoneTaskList({
     />
   );
 
+  const gap = compact ? "space-y-2" : "space-y-3";
+
   return (
     <>
+      {compact ? (
+        // No handle in compact mode, and a swipe on a row must scroll: no reordering here.
+        <div className={gap}>
+          {open.map((task) => (
+            <Fragment key={task.id}>{card(task)}</Fragment>
+          ))}
+        </div>
+      ) : (
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="phone-task-list">
           {(provided) => (
-            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
+            <div {...provided.droppableProps} ref={provided.innerRef} className={gap}>
               {open.map((task, index) => (
                 <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
                   {(drag) => card(task, drag)}
@@ -89,6 +110,7 @@ export default function PhoneTaskList({
           )}
         </Droppable>
       </DragDropContext>
+      )}
 
       {open.length === 0 && (
         <p className="py-8 text-center text-fg-muted">No open tasks. Tap + to add one.</p>
@@ -106,7 +128,7 @@ export default function PhoneTaskList({
             Finished ({finished.length})
           </button>
           {showFinished && (
-            <div className="mt-2 space-y-3">
+            <div className={`mt-2 ${gap}`}>
               {finished.map((task) => (
                 <div key={task.id}>{card(task)}</div>
               ))}

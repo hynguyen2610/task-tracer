@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, HardDriveDownload, Palette } from "lucide-react";
+import { BarChart3, HardDriveDownload, Settings } from "lucide-react";
 import "./App.css";
 import { BACKUP_REMINDER_DAYS, canBackup, lastBackupAt } from "./api/backup";
 import { useIsPhone } from "./hooks/useIsPhone";
@@ -8,8 +8,8 @@ import { TimeFormatContext, useTimeFormatSetting } from "./hooks/useTimeFormat";
 import BackupDialog from "./components/BackupDialog";
 import NewTaskForm from "./components/NewTaskForm";
 import PhoneLayout from "./components/phone/PhoneLayout";
+import SettingsDialog from "./components/SettingsDialog";
 import StatsScreen from "./components/StatsScreen";
-import ThemePicker from "./components/ThemePicker";
 import TaskList from "./components/TaskList";
 import TasksSummary from "./components/TasksSummary";
 
@@ -29,7 +29,7 @@ export default function App() {
   const { format, setFormat } = useTimeFormatSetting();
   const [screen, setScreen] = useState<"tasks" | "stats">("tasks");
   const [backupOpen, setBackupOpen] = useState(false);
-  const [themeOpen, setThemeOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastBackup, setLastBackup] = useState(lastBackupAt);
   const [now] = useState(Date.now);
   // Remind once there is work worth keeping and no recent backup.
@@ -42,7 +42,7 @@ export default function App() {
       {backupOpen && (
         <BackupDialog onClose={() => setBackupOpen(false)} onExported={() => setLastBackup(lastBackupAt())} />
       )}
-      {themeOpen && <ThemePicker onClose={() => setThemeOpen(false)} />}
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </>
   );
 
@@ -56,7 +56,7 @@ export default function App() {
           onTimeFormatChange={setFormat}
           backupDue={backupDue}
           onOpenBackup={() => setBackupOpen(true)}
-          onOpenTheme={() => setThemeOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
         {dialogs}
       </TimeFormatContext.Provider>
@@ -74,12 +74,12 @@ export default function App() {
             <>
               <div className="absolute top-4 right-4 flex gap-2">
                 <button
-                  onClick={() => setThemeOpen(true)}
-                  aria-label="Theme"
-                  title="Theme"
+                  onClick={() => setSettingsOpen(true)}
+                  aria-label="Settings"
+                  title="Settings"
                   className="w-10 h-10 flex items-center justify-center rounded-full border border-line text-fg hover:bg-fill transition"
                 >
-                  <Palette size={20} />
+                  <Settings size={20} />
                 </button>
                 {canBackup() && (
                   <button

@@ -26,13 +26,18 @@ async function setStatus(page: Page, card: ReturnType<Page["locator"]>, status: 
   }
 }
 
+async function openThemes(page: Page) {
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  return page.getByRole("dialog", { name: "Settings" });
+}
+
 async function pickTheme(page: Page, name: string) {
-  await page.getByRole("button", { name: "Theme", exact: true }).click();
-  const picker = page.getByRole("dialog", { name: "Theme" });
+  const settings = await openThemes(page);
+  const picker = settings.getByRole("radiogroup", { name: "Theme" });
   await picker.getByRole("radio", { name: new RegExp(`^${name}`) }).click();
   await expect(picker.getByRole("radio", { name: new RegExp(`^${name}`) })).toHaveAttribute("aria-checked", "true");
-  await picker.getByRole("button", { name: "Close" }).click();
-  await expect(picker).toHaveCount(0);
+  await settings.getByRole("button", { name: "Close" }).click();
+  await expect(settings).toHaveCount(0);
 }
 
 const theme = (page: Page) => page.evaluate(() => document.documentElement.dataset.theme);
@@ -45,11 +50,11 @@ test.beforeEach(async ({ page }) => {
 
 test("picks a theme, applies it at once and keeps it after a reload", async ({ page }) => {
   expect(await theme(page)).toBe("classic");
-  await page.getByRole("button", { name: "Theme", exact: true }).click();
-  const picker = page.getByRole("dialog", { name: "Theme" });
+  const settings = await openThemes(page);
+  const picker = settings.getByRole("radiogroup", { name: "Theme" });
   await expect(picker.getByRole("radio")).toHaveCount(THEMES.length);
   await expect(picker.getByRole("radio", { name: /^Classic/ })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("dialog", { name: "Theme" }).getByRole("button", { name: "Close" }).click();
+  await settings.getByRole("button", { name: "Close" }).click();
 
   await pickTheme(page, "Midnight");
   expect(await theme(page)).toBe("midnight");

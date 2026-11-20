@@ -560,8 +560,8 @@ layout of its own, with nothing scrolling sideways. Wider screens keep the
 card layout above, unchanged.
 
 - **Page:** edge to edge on a light grey background, 16 px side margins, no
-  card. A header stays at the top with the title and a **Backup** button,
-  which shows the backup reminder dot (10.3).
+  card. A header stays at the top with the title, a **Settings** button (16)
+  and a **Backup** button, which shows the backup reminder dot (10.3).
 - **Running task:** starting or pausing a task changes only that card's
   Start/Pause button and its glow; nothing appears, disappears or moves
   elsewhere on the page.
@@ -651,9 +651,7 @@ All five are done (15.2, 15.3).
 
 ### 15.2 Choosing a theme
 
-- **Theme** (palette icon) opens the picker: in the header next to Backup on a
-  phone (as a sheet from the bottom), next to Backup and Statistics on
-  desktop (as a dialog).
+- The themes are listed under **Theme** in Settings (16).
 - Each theme is shown as a small task card drawn in that theme, with its name
   and a line about its look. A tap applies it at once; the current one is
   checked.
@@ -710,3 +708,22 @@ All five are done (15.2, 15.3).
   and sage waves along the bottom; on a phone the bottom bar has a wavy top
   edge. The running task breathes slowly; a new task rises gently into place;
   Done lets a leaf fall from the card.
+
+## 16. Settings and UI modes
+
+- **Settings** (gear icon) opens one place for the look of the app: in the
+  header next to Backup on a phone (as a sheet from the bottom), next to
+  Backup and Statistics on desktop (as a dialog). It has two parts:
+  **UI mode** and **Theme** (15.2). Each choice applies at once.
+- **UI mode** is **Full** (the default: everything described in 4.5 and 14)
+  or **Compact**. The choice is saved on the device (`localStorage` key
+  `uiMode`) and, like the theme, is not part of a backup.
+- **Compact:** each task is one line with only a status icon, the title
+  (cut short with … when it doesn't fit) and the Start/Pause button. The row
+  keeps its colours (4.5) and the theme's moments (15.2). The status icons:
+  Todo ○, In progress ◉, Pending ⧗, Done ✓, Canceled ⊘; the status name is
+  the icon's label and tooltip. Editing, deleting and changing the status
+  need Full mode. On desktop a row is dragged to reorder as in Full mode; on
+  a phone there is no handle, so compact rows can't be reordered. The rest
+  of the page (adding a task, totals, Finished section, bottom bar) stays
+  the same.

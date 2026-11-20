@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
 import type { Status, Task, TaskChanges } from "../types";
-import TaskItem from "./TaskItem";
+import { useUiMode } from "../hooks/useUiMode";
 import { useNewIds } from "../theme/moments";
+import CompactTaskRow from "./CompactTaskRow";
+import TaskItem from "./TaskItem";
 
 interface TaskListProps {
   tasks: Task[];
@@ -30,6 +32,7 @@ export default function TaskList({
   // Only one task can be edited at a time.
   const [editingId, setEditingId] = useState<number | null>(null);
   const newIds = useNewIds(tasks.map((t) => t.id), loaded);
+  const compact = useUiMode() === "compact";
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -43,9 +46,21 @@ export default function TaskList({
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
-            className="space-y-4"
+            className={compact ? "space-y-2" : "space-y-4"}
           >
-            {tasks.map((task, index) => (
+            {tasks.map((task, index) =>
+              compact ? (
+                <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                  {(drag) => (
+                    <CompactTaskRow
+                      task={task}
+                      drag={drag}
+                      isNew={newIds.has(task.id)}
+                      onToggle={() => onToggle(task.id)}
+                    />
+                  )}
+                </Draggable>
+              ) : (
               <TaskItem
                 key={task.id}
                 task={task}
@@ -62,7 +77,8 @@ export default function TaskList({
                 onStatusChange={(status) => onStatusChange(task.id, status)}
                 onDelete={() => onDelete(task.id)}
               />
-            ))}
+              )
+            )}
             {provided.placeholder}
           </div>
         )}
