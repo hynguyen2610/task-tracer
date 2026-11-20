@@ -116,20 +116,78 @@ test("open tasks reorder by their handle and finished tasks stay put", async ({ 
   await expect.poll(() => titles(page)).toEqual(["Fourth", "First task of the day", "Second", "Already done"]);
 });
 
-test("the more menu opens the report and backup, and they fit the screen", async ({ page }) => {
-  await addTask(page, "Report on a phone");
-  for (const [item, dialogName] of [
-    ["Daily report", /report/i],
-    [/^Backup/, "Backup"],
-  ] as const) {
-    await page.getByRole("button", { name: /^More actions/ }).tap();
-    await page.getByRole("menuitem", { name: item }).tap();
-    const dialog = page.getByRole("dialog", { name: dialogName });
-    await expect(dialog).toBeVisible();
-    expect(await sideways(page)).toBeLessThanOrEqual(0);
-    await dialog.getByRole("button", { name: "Close" }).tap();
-    await expect(dialog).toHaveCount(0);
-  }
+/** Whether the element is entirely inside the screen. */
+const onScreen = (el: ReturnType<Page["locator"]>) =>
+  el.evaluate((node) => {
+    const r = node.getBoundingClientRect();
+    return r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
+  });
+
+async function openFromMenu(page: Page, item: string | RegExp) {
+  await page.getByRole("button", { name: /^More actions/ }).tap();
+  await page.getByRole("menuitem", { name: item }).tap();
+}
+
+test("the daily report is a full-screen page with Copy always in reach", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  // Only tasks worked on today are in the report (docs/SPEC.md 8.1).
+  const row = await addTask(page, "Report on a phone");
+  await row.getByRole("button", { name: "Status: Todo" }).tap();
+  await page.getByRole("dialog", { name: "Status" }).getByRole("radio", { name: "In progress" }).tap();
+  await openFromMenu(page, "Daily report");
+  const report = page.getByRole("dialog", { name: /^Daily report/ });
+  await expect(report).toBeVisible();
+  expect(await sideways(page)).toBeLessThanOrEqual(0);
+
+  // Preview first: the email, with no fields in the way.
+  await expect(report.getByRole("tab", { name: "Preview" })).toHaveAttribute("aria-selected", "true");
+  await expect(report.getByRole("tabpanel", { name: "Preview" })).toContainText("Report on a phone");
+  await expect(report.getByRole("textbox")).toHaveCount(0);
+
+  // Edit: the daily fields open, the set-once ones folded under Report settings.
+  await report.getByRole("tab", { name: "Edit" }).tap();
+  const edit = report.getByRole("tabpanel", { name: "Edit" });
+  await expect(edit.getByText("Next planned tasks")).toBeVisible();
+  await expect(edit.getByText("Signature")).toBeHidden();
+  await edit.getByText("Report settings").tap();
+  await expect(edit.getByText("Signature")).toBeVisible();
+
+  // Scrolled to the end of the fields, Back and Copy are still on screen.
+  await edit.getByLabel("Ticket links").scrollIntoViewIfNeeded();
+  const back = report.getByRole("button", { name: "Back", exact: true });
+  const copy = report.getByRole("button", { name: "Copy report" });
+  expect(await onScreen(back)).toBe(true);
+  expect(await onScreen(copy)).toBe(true);
+  expect((await back.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await copy.tap();
+  await expect(report).toContainText("Copied. Paste it into your email.");
+
+  await back.tap();
+  await expect(report).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Task Tracker" })).toBeVisible();
+});
+
+test("the phone's back and Escape close a full-screen page and stay in the app", async ({ page }) => {
+  await openFromMenu(page, "Daily report");
+  const report = page.getByRole("dialog", { name: /^Daily report/ });
+  await expect(report).toBeVisible();
+  await page.goBack();
+  await expect(report).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Task Tracker" })).toBeVisible();
+
+  // Closing with Back leaves no extra history: the next phone back has
+  // nothing of ours left to undo.
+  await openFromMenu(page, /^Backup/);
+  const backup = page.getByRole("dialog", { name: "Backup" });
+  await expect(backup.getByRole("button", { name: "Export backup" })).toBeVisible();
+  expect(await sideways(page)).toBeLessThanOrEqual(0);
+  await backup.getByRole("button", { name: "Back", exact: true }).tap();
+  await expect(backup).toHaveCount(0);
+  expect(await page.evaluate(() => history.state?.fullScreenPage)).toBeFalsy();
+
+  await openFromMenu(page, /^Backup/);
+  await page.keyboard.press("Escape");
+  await expect(backup).toHaveCount(0);
 });
 
 test("statistics open from the bottom bar and a tap on the timeline shows the details", async ({ page }) => {

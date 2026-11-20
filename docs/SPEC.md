@@ -212,7 +212,8 @@ Dragging a task saves the new order for the whole list right away.
 
 ## 8. Daily report
 
-The mail button next to Export opens the **Daily report** dialog. It builds an
+The mail button next to Export opens the **Daily report** dialog (on a phone,
+**More actions → Daily report** opens it as a full-screen page, 14.1). It builds an
 email body for today and copies it to the clipboard, formatted, so it can be
 pasted into Gmail or Outlook.
 
@@ -565,5 +566,25 @@ card layout above, unchanged.
   button wraps under the title; the By task table and the timeline as in 9.2.
 - **Notch and home indicator:** the page uses `viewport-fit=cover`, and the
   header and bottom bar are padded by the safe-area insets.
-- **Dialogs:** the report, backup, workday and task history dialogs are the
-  same as on wide screens and fit the width.
+- **Full-screen pages:** the Daily report and Backup open as pages that
+  cover the screen instead of floating dialogs (14.1). The workday and task
+  history dialogs are the same as on wide screens and fit the width.
+
+### 14.1 Full-screen pages
+
+- **Header:** stays at the top: a 44 px **Back** button (←) and the title.
+  The content scrolls under it, so Back is always in reach.
+- **Phone back:** opening a page adds a browser history entry, so the
+  phone's back button or back swipe closes the page instead of leaving the
+  app. Back, Escape and the phone's back all close it the same way.
+- **Daily report:**
+  - Two tabs under the title: **Preview** (shown first) and **Edit**.
+  - **Preview:** the task count and Total ETA (8.3), then the email
+    preview at full width, scrolling with the page (no scroll box of its own).
+  - **Edit:** Next planned tasks and Issue / Concerns / Blocks, which change
+    from day to day. Greeting, intro, signature and ticket links are under
+    **Report settings**, folded by default; a ticket link line that isn't
+    used (8.5) is reported under the section either way.
+  - **Copy report** stays at the bottom of the screen at full width, on both
+    tabs, with "Copied" or the copy error shown just above it.
+- **Backup:** the same content as the dialog (10.3) under the header.

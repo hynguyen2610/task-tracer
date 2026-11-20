@@ -3,6 +3,8 @@ import { Download, Upload, X } from "lucide-react";
 import { exportBackup, lastBackupAt, readBackup, restoreBackup } from "../api/backup";
 import { storageState, type StorageState } from "../api/storage";
 import type { Backup } from "../core/backup";
+import { useIsPhone } from "../hooks/useIsPhone";
+import FullScreenPage from "./phone/FullScreenPage";
 
 interface BackupDialogProps {
   onClose: () => void;
@@ -24,18 +26,20 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
   const [pending, setPending] = useState<Backup | null>(null);
   const [busy, setBusy] = useState(false);
   const [storage, setStorage] = useState<StorageState>("unknown");
+  const isPhone = useIsPhone();
 
   useEffect(() => {
     void storageState().then(setStorage);
   }, []);
 
   useEffect(() => {
+    if (isPhone) return; // the full-screen page handles Escape
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, isPhone]);
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
@@ -74,6 +78,109 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
       window.location.reload();
     });
 
+  const content = (
+    <>
+      <p className="text-sm text-gray-600">
+        Your tasks and history are kept only in this browser, on this device. Clearing the
+        browser's data deletes them. Export a backup now and then; import it to restore, or to
+        move to another device.
+      </p>
+      <p className="text-sm text-gray-600 mt-3" data-testid="storage-state">
+        Storage:{" "}
+        {storage === "kept" ? (
+          <strong className="text-green-700">kept by the browser</strong>
+        ) : storage === "may-be-cleared" ? (
+          <>
+            <strong className="text-amber-700">may be cleared by the browser</strong>. Installing the
+            app to the home screen helps; on iPhone, Safari clears data after 7 days without use
+            unless it is installed.
+          </>
+        ) : (
+          <strong>unknown</strong>
+        )}
+      </p>
+      <p className="text-sm text-gray-600 mt-1" data-testid="last-backup">
+        Last backup: <strong>{last ? dateTime(last) : "never"}</strong>
+      </p>
+
+      <div className="flex flex-wrap gap-3 mt-5">
+        <button
+          type="button"
+          onClick={doExport}
+          disabled={busy}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+        >
+          <Download size={18} /> Export backup
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          disabled={busy}
+          className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+        >
+          <Upload size={18} /> Import backup…
+        </button>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          aria-label="Backup file"
+          className="hidden"
+          onChange={pickFile}
+        />
+      </div>
+
+      {message && (
+        <p role="status" className="mt-4 text-sm text-green-700">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-4 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+
+      {pending && (
+        <div className="mt-5 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
+          <p className="text-gray-800">
+            Replace everything in this browser with the backup from{" "}
+            <strong>{pending.exportedAt ? dateTime(pending.exportedAt) : "an unknown date"}</strong> (
+            {count(pending.tasks.length, "task")}, {count(pending.sessions.length, "work session")},{" "}
+            {count(pending.events.length, "change")})?
+          </p>
+          <p className="text-gray-600 mt-1">The tasks and history here now will be lost.</p>
+          <div className="flex gap-3 mt-3">
+            <button
+              type="button"
+              onClick={() => doImport(pending)}
+              disabled={busy}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+            >
+              Replace
+            </button>
+            <button
+              type="button"
+              onClick={() => setPending(null)}
+              disabled={busy}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  if (isPhone) {
+    return (
+      <FullScreenPage title="Backup" onClose={onClose}>
+        {content}
+      </FullScreenPage>
+    );
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto"
@@ -99,96 +206,7 @@ export default function BackupDialog({ onClose, onExported }: BackupDialogProps)
             <X />
           </button>
         </div>
-        <p className="text-sm text-gray-600">
-          Your tasks and history are kept only in this browser, on this device. Clearing the
-          browser's data deletes them. Export a backup now and then; import it to restore, or to
-          move to another device.
-        </p>
-        <p className="text-sm text-gray-600 mt-3" data-testid="storage-state">
-          Storage:{" "}
-          {storage === "kept" ? (
-            <strong className="text-green-700">kept by the browser</strong>
-          ) : storage === "may-be-cleared" ? (
-            <>
-              <strong className="text-amber-700">may be cleared by the browser</strong>. Installing the
-              app to the home screen helps; on iPhone, Safari clears data after 7 days without use
-              unless it is installed.
-            </>
-          ) : (
-            <strong>unknown</strong>
-          )}
-        </p>
-        <p className="text-sm text-gray-600 mt-1" data-testid="last-backup">
-          Last backup: <strong>{last ? dateTime(last) : "never"}</strong>
-        </p>
-
-        <div className="flex flex-wrap gap-3 mt-5">
-          <button
-            type="button"
-            onClick={doExport}
-            disabled={busy}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
-          >
-            <Download size={18} /> Export backup
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            disabled={busy}
-            className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-          >
-            <Upload size={18} /> Import backup…
-          </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="application/json,.json"
-            aria-label="Backup file"
-            className="hidden"
-            onChange={pickFile}
-          />
-        </div>
-
-        {message && (
-          <p role="status" className="mt-4 text-sm text-green-700">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="mt-4 text-sm text-red-600">
-            {error}
-          </p>
-        )}
-
-        {pending && (
-          <div className="mt-5 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
-            <p className="text-gray-800">
-              Replace everything in this browser with the backup from{" "}
-              <strong>{pending.exportedAt ? dateTime(pending.exportedAt) : "an unknown date"}</strong> (
-              {count(pending.tasks.length, "task")}, {count(pending.sessions.length, "work session")},{" "}
-              {count(pending.events.length, "change")})?
-            </p>
-            <p className="text-gray-600 mt-1">The tasks and history here now will be lost.</p>
-            <div className="flex gap-3 mt-3">
-              <button
-                type="button"
-                onClick={() => doImport(pending)}
-                disabled={busy}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-              >
-                Replace
-              </button>
-              <button
-                type="button"
-                onClick={() => setPending(null)}
-                disabled={busy}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+        {content}
       </div>
     </div>
   );
