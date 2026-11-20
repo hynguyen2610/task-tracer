@@ -140,7 +140,7 @@ export default function PhoneLayout({
 
       <nav
         aria-label="Screens"
-        className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t bg-surface pb-[env(safe-area-inset-bottom)]"
+        className="app-nav fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t bg-surface pb-[env(safe-area-inset-bottom)]"
       >
         {navButton("tasks", "Tasks", <ListTodo size={22} />)}
         {/* Opens the full-screen report page over the current screen. */}

@@ -36,6 +36,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Theme fonts: Latin and Vietnamese work offline; other scripts load
+        // only when such text appears (docs/SPEC.md 15.2).
+        globIgnores: ['**/*-cyrillic*', '**/*-greek*'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
       },

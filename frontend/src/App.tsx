@@ -67,7 +67,7 @@ export default function App() {
   return (
     <TimeFormatContext.Provider value={format}>
       <div className="app-bg min-h-screen bg-gradient-to-br from-page to-page-deep flex justify-center items-start p-8">
-        <div className="w-full max-w-7xl bg-surface rounded-2xl shadow-xl p-6 relative">
+        <div className="app-sheet w-full max-w-7xl bg-surface rounded-2xl shadow-xl p-6 relative">
           {screen === "stats" ? (
             <StatsScreen tasks={tasks} onBack={() => setScreen("tasks")} />
           ) : (

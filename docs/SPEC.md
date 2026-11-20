@@ -598,7 +598,7 @@ later also fonts, shapes, background graphics and animations.
 | Terminal | black and green, monospace |
 | Zen | soft greens and sand, rounded |
 
-Status: Classic and Midnight are done (15.2, 15.3); Notebook, Terminal and
+Status: Classic, Midnight and Notebook are done (15.2, 15.3); Terminal and
 Zen are still to come.
 
 ### 15.1 Colour roles
@@ -640,8 +640,9 @@ Zen are still to come.
   - a task just set to Done (`data-just-done`, for 1.5 s). On a phone the
     task moves to the folded Finished section, so that section's header
     shows the moment too.
-- Fonts are stored with the app (`@fontsource` packages, Latin and
-  Vietnamese), so every theme works offline.
+- Fonts are stored with the app (`@fontsource` packages). Latin and
+  Vietnamese work offline; Cyrillic and Greek parts load only when such text
+  appears, and are not kept for offline use.
 - When the device asks for reduced motion, no theme animates; only the
   colours change.
 - Every theme is checked for text contrast (4.5:1) on the task list, the
@@ -657,3 +658,10 @@ Zen are still to come.
   out of the dark; Done sweeps a band of light across the card. Form fields
   and the browser's controls are dark (`color-scheme: dark`). The report
   preview stays white, like the email.
+- **Notebook:** ruled paper with a red margin line (the page on a phone, the
+  sheet on desktop), ink-blue text, a red pen accent, task titles in Patrick
+  Hand. Tasks are sticky notes in pastel colours, slightly tilted, with a
+  strip of tape on top (on desktop the tilt is much smaller). The running
+  task flutters inside a dashed pencil outline; a new task drops onto the
+  page; Done tasks are struck through in red pen, and the stroke is drawn when
+  a task is set to Done.

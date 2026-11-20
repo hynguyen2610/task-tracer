@@ -62,6 +62,7 @@ export default function TaskCard({
       ref={drag?.innerRef}
       {...drag?.draggableProps}
       data-testid="task"
+      data-status={task.status}
       data-new={isNew || undefined}
       data-just-done={justDone || undefined}
       data-task-id={task.id}
@@ -79,7 +80,9 @@ export default function TaskCard({
             <GripVertical size={18} />
           </span>
         )}
-        <p className="min-w-0 flex-1 break-words pt-1 font-medium leading-snug text-fg-strong">{task.title}</p>
+        <p className="task-title min-w-0 flex-1 break-words pt-1 font-medium leading-snug text-fg-strong">
+          <span className="task-title-text">{task.title}</span>
+        </p>
         {!isEditing && (
           <ActionMenu
             label="Task actions"
@@ -122,7 +125,7 @@ export default function TaskCard({
           {task.statusNote && <p className="mt-1 text-sm italic text-fg-soft">{task.statusNote}</p>}
 
           <div className="mt-2 flex items-center justify-between">
-            <span data-testid="task-time" className="text-2xl font-semibold tabular-nums text-fg-strong">
+            <span data-testid="task-time" className="task-time text-2xl font-semibold tabular-nums text-fg-strong">
               {formatDuration(task.totalSeconds, timeFormat)}
             </span>
             <PlayPauseButton

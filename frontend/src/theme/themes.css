@@ -149,3 +149,73 @@
   --c-email-paper: 255 255 255;
   --c-email-ink: 17 24 39;
 }
+
+/* Notebook: ruled paper, ink blue, sticky notes for tasks, a red pen. */
+[data-theme="notebook"] {
+  --c-page: 250 246 236;
+  --c-page-deep: 238 230 210;
+  --c-surface: 255 253 247;
+  --c-fill: 242 236 222;
+  --c-fill-soft: 248 244 234;
+  --c-line: 200 190 165;
+  --c-line-soft: 225 216 195;
+  --c-scrim: 40 30 10;
+  --c-tooltip: 30 41 79;
+
+  --c-fg-strong: 30 41 79;
+  --c-fg: 45 58 99;
+  --c-fg-soft: 58 70 108;
+  --c-fg-muted: 82 92 124;
+  --c-fg-faint: 128 136 158;
+  --c-fg-ghost: 182 186 198;
+  --c-on-color: 255 255 255;
+
+  --c-primary: 37 64 160;
+  --c-primary-hover: 28 48 125;
+  --c-primary-soft: 230 236 252;
+  --c-primary-ring: 110 140 220;
+  --c-accent: 186 38 52;
+  --c-accent-hover: 156 28 40;
+  --c-accent-soft: 252 232 232;
+  --c-accent-ring: 230 120 120;
+  --c-accent-strong: 156 28 40;
+  --c-selected: 37 64 160;
+  --c-go: 40 118 66;
+  --c-go-hover: 30 95 52;
+  --c-stop: 186 38 52;
+  --c-stop-hover: 156 28 40;
+  --c-live: 220 60 70;
+  --c-edit: 176 120 12;
+  --c-edit-hover: 146 98 8;
+  --c-neutral: 104 110 128;
+  --c-neutral-hover: 80 86 104;
+
+  --c-danger: 180 35 45;
+  --c-danger-hover: 150 25 35;
+  --c-danger-soft: 252 232 232;
+  --c-danger-strong: 150 25 35;
+  --c-success: 36 110 58;
+  --c-warn: 200 140 20;
+  --c-warn-soft: 255 246 220;
+  --c-warn-line: 230 200 120;
+  --c-warn-strong: 130 84 8;
+
+  /* Sticky notes */
+  --c-row-highest: 255 214 224;
+  --c-row-highest-edge: 214 51 108;
+  --c-row-high: 255 224 192;
+  --c-row-high-edge: 226 118 40;
+  --c-row-normal: 222 244 218;
+  --c-row-normal-edge: 76 156 90;
+  --c-row-low: 232 236 241;
+  --c-row-low-edge: 132 142 160;
+  --c-row-progress: 214 232 255;
+  --c-row-progress-edge: 59 120 230;
+  --c-row-pending: 255 241 168;
+  --c-row-pending-edge: 196 150 20;
+  --c-row-done: 228 234 222;
+  --c-row-done-edge: 104 140 94;
+
+  --c-email-paper: 255 255 255;
+  --c-email-ink: 17 24 39;
+}

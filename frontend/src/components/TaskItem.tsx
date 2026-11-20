@@ -50,6 +50,7 @@ export default function TaskItem({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           data-testid="task"
+          data-status={task.status}
           data-new={isNew || undefined}
           data-just-done={justDone || undefined}
           className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 rounded-xl shadow-sm ${
@@ -69,12 +70,14 @@ export default function TaskItem({
             ) : (
               <div className="min-w-0">
                 {/* Wraps only when the title is longer than the row. */}
-                <p className="font-medium text-fg-strong break-words">{task.title}</p>
+                <p className="task-title font-medium text-fg-strong break-words">
+                  <span className="task-title-text">{task.title}</span>
+                </p>
                 {/* Stacked on narrow screens, one line on wider ones. */}
                 <div className="md:flex md:flex-wrap md:items-center md:gap-x-6">
                   <p className="text-fg-soft text-sm">
                     <span className="font-medium">Total Time:</span>{" "}
-                    {formatDuration(task.totalSeconds, timeFormat)}
+                    <span className="task-time">{formatDuration(task.totalSeconds, timeFormat)}</span>
                   </p>
                   <p className="text-fg-soft text-sm">
                     <span className="font-medium">Priority:</span> {task.priority}

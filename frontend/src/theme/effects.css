@@ -5,6 +5,10 @@
  *   .glow              the running task (Classic's pulse is in App.css)
  *   [data-new]         a task just added, for a moment
  *   [data-just-done]   a task just set to Done, for a moment
+ *   [data-status]      a task card's status
+ *   .task-title, .task-title-text, .task-time   parts of a task card
+ *   .app-sheet         the desktop card that holds a screen
+ *   .app-nav           the phone's bottom bar
  */
 
 :root,
@@ -112,5 +116,122 @@
   .animate-sheet-up,
   .animate-pulse {
     animation: none !important;
+  }
+}
+
+/* ---------- Notebook ---------- */
+
+[data-theme="notebook"] {
+  --font-display: "Patrick Hand", "Comic Sans MS", ui-rounded, cursive;
+}
+[data-theme="notebook"] .task-title {
+  font-family: var(--font-display);
+  font-size: 1.2em;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+/* Ruled paper with a red margin line: the page on a phone, the sheet on desktop. */
+[data-theme="notebook"] .app-bg,
+[data-theme="notebook"] .app-sheet {
+  background-color: rgb(var(--c-surface));
+  background-image:
+    linear-gradient(90deg, transparent 2.25rem, rgb(214 80 80 / 0.35) 2.25rem, rgb(214 80 80 / 0.35) calc(2.25rem + 1px), transparent calc(2.25rem + 1px)),
+    repeating-linear-gradient(to bottom, transparent 0 31px, rgb(var(--c-line) / 0.45) 31px 32px);
+}
+/* On desktop the desk around the sheet is plain. */
+[data-theme="notebook"] .app-bg:has(> .app-sheet) {
+  background-image: none;
+  background-color: rgb(var(--c-page-deep));
+}
+
+/* Tasks are sticky notes: a little tilted, with a strip of tape on top. */
+[data-theme="notebook"] [data-testid="task"] {
+  position: relative;
+  box-shadow: 0 6px 10px -6px rgb(60 40 10 / 0.35);
+}
+[data-theme="notebook"] [data-testid="task"]:nth-child(odd) {
+  transform: rotate(-0.5deg);
+}
+[data-theme="notebook"] [data-testid="task"]:nth-child(even) {
+  transform: rotate(0.45deg);
+}
+[data-theme="notebook"] [data-testid="task"]::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 4.5rem;
+  height: 1rem;
+  translate: -50% 0;
+  rotate: -2deg;
+  background: rgb(255 255 255 / 0.55);
+  border: 1px solid rgb(var(--c-line) / 0.5);
+  pointer-events: none;
+}
+/* Desktop rows are wide: the same angle would look crooked. */
+@media (min-width: 640px) {
+  [data-theme="notebook"] [data-testid="task"]:nth-child(odd) {
+    transform: rotate(-0.12deg);
+  }
+  [data-theme="notebook"] [data-testid="task"]:nth-child(even) {
+    transform: rotate(0.1deg);
+  }
+}
+/* A note with its menu open sits above its neighbours. */
+[data-theme="notebook"] [data-testid="task"]:has([aria-expanded="true"]) {
+  z-index: 30;
+}
+
+/* Done: struck through in red pen. Just done: the stroke is drawn. */
+[data-theme="notebook"] [data-status="Done"] .task-title-text {
+  background-image: linear-gradient(rgb(var(--c-accent)), rgb(var(--c-accent)));
+  background-repeat: no-repeat;
+  background-position: 0 60%;
+  background-size: 100% 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+[data-theme="notebook"] [data-just-done] .task-title-text {
+  animation: notebook-strike 700ms ease-out;
+}
+@keyframes notebook-strike {
+  from {
+    background-size: 0% 2px;
+  }
+}
+
+/* The running task flutters, circled in pencil. */
+[data-theme="notebook"] .glow {
+  animation: notebook-flutter 2.8s ease-in-out infinite;
+  outline: 2px dashed rgb(var(--c-primary));
+  outline-offset: 4px;
+}
+@keyframes notebook-flutter {
+  0%,
+  100% {
+    transform: rotate(calc(-1 * var(--notebook-flutter)));
+  }
+  50% {
+    transform: rotate(var(--notebook-flutter));
+  }
+}
+[data-theme="notebook"] {
+  --notebook-flutter: 0.7deg;
+}
+@media (min-width: 640px) {
+  [data-theme="notebook"] {
+    --notebook-flutter: 0.2deg;
+  }
+}
+
+/* A new note drops onto the page. */
+[data-theme="notebook"] [data-new] {
+  animation: notebook-drop 600ms cubic-bezier(0.2, 0.8, 0.3, 1.25);
+}
+@keyframes notebook-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-28px) rotate(-5deg);
   }
 }
